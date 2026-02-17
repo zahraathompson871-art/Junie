@@ -1,79 +1,69 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+body {
+ background:#0b0c12;
+ color:#fff;
+ font-family: Inter, sans-serif;
 }
 
 a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+ color:#a9adc1;
+ text-decoration:none;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+a.router-link-active {
+ color:#7c6cff;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.dark-card {
+ background:#141622;
+ border-radius:20px;
+ padding:22px;
+ border:1px solid rgba(124,108,255,.22);
+ transition:.25s;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.btn-glow {
+ background:#7c6cff;
+ color:white;
+ border:none;
+ border-radius:16px;
+ padding:12px 22px;
+ box-shadow:0 0 18px rgba(124,108,255,.35);
 }
 
-.card {
-  padding: 2em;
+.search {
+ background:#151726;
+ border:none;
+ border-radius:14px;
+ padding:8px 14px;
+ color:white;
 }
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+.text-muted2 {
+ color:#838bb7;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.glowup-card {
+  background-image: url("https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?fm=jpg&q=60&w=1200&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+  color: #fff;
+  min-height: 220px;
+  position: relative;
+  overflow: hidden;
 }
+
+.glowup-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.glowup-card:hover::before { 
+    background: rgba(0,0,0,0.4);
+ }
+
+ 
