@@ -1,25 +1,20 @@
-const express = require('express');
-const cors = require('cors');
-require ('dotenv').config();
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import userRoutes from "./routes/userRoutes.js";
+import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
-require ("./config/db");
+dotenv.config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.get("/",(req,res)=>{
-    res.status(200).json({
-        message:"API running",
-    })
-});
+app.use("/api/users", userRoutes);
 
-app.use((req,res)=>{
-    res.status(404).json({
-        error:"Route not found",
-    })
-});
+app.use(notFound);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
