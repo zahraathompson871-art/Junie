@@ -9,6 +9,8 @@ import Dashboard from './views/Dashboard.vue'
 import Profile from './views/Profile.vue'
 import CreatorHub from './views/CreatorHub.vue'
 import Cart from './views/Cart.vue'
+import Checkout from './views/Checkout.vue'
+import ThankYou from './views/ThankYou.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -18,7 +20,9 @@ const routes = [
   { path: '/marketplace', name: 'Marketplace', component: Marketplace },
   { path: '/creatorhub', name: 'CreatorHub', component: CreatorHub },
   { path: '/profile', name: 'Profile', component: Profile },
-  { path: '/cart', name: 'Cart', component: Cart }
+  { path: '/cart', name: 'Cart', component: Cart },
+  { path: '/checkout', name: 'Checkout', component: Checkout },
+  { path: '/thankyou', name: 'ThankYou', component: ThankYou } 
 ]
 
 const router = createRouter({
@@ -26,15 +30,15 @@ const router = createRouter({
   routes
 })
 
-// ✅ Route Guard
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('user') // stored when login/signup succeeds
+  const isAuthenticated = localStorage.getItem('user')
 
-  // Protect all main app sections
-  const protectedRoutes = ['Dashboard', 'Marketplace', 'CreatorHub', 'Profile', 'Cart']
+  const protectedRoutes = [
+    'Dashboard', 'Marketplace', 'CreatorHub', 'Profile', 'Cart', 'Checkout', 'ThankYou'
+  ]
 
   if (protectedRoutes.includes(to.name) && !isAuthenticated) {
-    next({ name: 'Login' }) // redirect to login if not authenticated
+    next({ name: 'Login' })
   } else {
     next()
   }

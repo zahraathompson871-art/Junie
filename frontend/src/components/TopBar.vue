@@ -45,32 +45,36 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #111;
+  background-color: #ffffff; /* white bar */
   padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid #ddd;
   position: sticky;
   top: 0;
   z-index: 1000;
 }
 
 .brand-name {
-  color: #ffffff;
-  font-weight: 900;   /* ✅ Bold Junie */
+  color: #121212; /* black text */
+  font-weight: 900;
   letter-spacing: 1px;
   text-decoration: none;
 }
 .brand-name:hover {
-  color: #e0e0e0;
+  color: #333; /* darker hover */
 }
 
 .search-bar {
-  width: 100%;        /* ✅ Expand search bar */
-  max-width: 600px;   /* optional limit so it doesn’t overflow */
+  width: 100%;
+  max-width: 600px;
   padding: 0.5rem;
   border-radius: 6px;
-  border: 1px solid #2a2a2a;
-  background-color: #1a1a1a;
-  color: #e0e0e0;
+  border: 1px solid #ddd;
+  background-color: #fdfdf6; /* cream input background */
+  color: #121212;
+}
+.search-bar:focus {
+  border-color: #121212;
+  outline: none;
 }
 
 .nav-links {
@@ -84,12 +88,12 @@ export default {
 
 .nav-link {
   margin-left: 1rem;
-  color: #e0e0e0;
+  color: #121212; /* black text */
   text-decoration: none;
   transition: color 0.3s ease;
 }
 .nav-link:hover {
-  color: #ffffff;
+  color: #333; /* darker hover */
 }
 
 .profile-cart {
@@ -102,10 +106,10 @@ export default {
   cursor: pointer;
   position: relative;
   font-size: 1.2rem;
-  color: #fff;
+  color: #121212; /* black icon */
 }
 .cart-count {
-  background: #9d4edd;
+  background: #121212; /* black badge */
   color: #fff;
   border-radius: 50%;
   padding: 0.2rem 0.5rem;

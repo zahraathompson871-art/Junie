@@ -168,21 +168,25 @@ export default {
 .main {
   flex: 1;
   overflow-y: auto;
-  background-color: #0d0d0d;
-  color: #e0e0e0;
+  background-color: #fdfdf6; /* cream background */
+  color: #121212;            /* black text */
 }
+
 .text-glow {
-  color: #ffffff;
+  color: #121212;
   font-weight: 600;
 }
+
 .stat-block, .progress-block, .motivation-block, .challenge-block,
 .notification-block, .community-block, .task-block, .goal-block, .graph-block {
-  background-color: #121212;
-  border: 1px solid #1f1f1f;
+  background-color: #ffffff; /* white cards */
+  border: 1px solid #ddd;
   border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+
+/* Task list */
 .task-list {
   list-style: none;
   padding-left: 0;
@@ -197,11 +201,10 @@ export default {
   text-decoration: line-through;
   color: #888;
 }
-.bg-purple {
-  background-color: #9d4edd;
-}
+
+/* Progress bars */
 .progress {
-  background-color: #1f1f1f;
+  background-color: #f2f2f2; /* cream progress background */
   border-radius: 8px;
   overflow: hidden;
 }
@@ -209,5 +212,33 @@ export default {
   height: 20px;
   font-size: 0.8rem;
   font-weight: 600;
+  background-color: #121212; /* black bar */
+  color: #fff;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.75rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-glow {
+  background-color: #121212; /* black button */
+  color: #fff;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+.btn-glow:hover {
+  background-color: #333;
+}
+.btn-outline {
+  border: 1px solid #121212;
+  color: #121212;
+  background: transparent;
+}
+.btn-outline:hover {
+  background-color: #121212;
+  color: #fff;
 }
 </style>

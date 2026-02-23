@@ -24,7 +24,66 @@ export default {}
 </script>
 
 <style scoped>
-.main { background-color: #0d0d0d; color: #e0e0e0; flex: 1; overflow-y: auto; }
-.text-glow { color: #fff; font-weight: 600; }
-.btn-glow { background-color: #9d4edd; color: #fff; border-radius: 8px; }
+.main {
+  background-color: #fdfdf6; /* cream background */
+  color: #121212;            /* black text */
+  flex: 1;
+  overflow-y: auto;
+  min-height: 100vh;
+}
+
+.text-glow {
+  color: #121212; /* black accent */
+  font-weight: 600;
+}
+
+.container {
+  background: #ffffff; /* white card */
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  max-width: 600px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.list-group-item {
+  background-color: #fdfdf6; /* cream item background */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.list-group-item a {
+  color: #121212;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.list-group-item a:hover {
+  text-decoration: underline;
+}
+
+/* Buttons */
+.btn-glow {
+  background-color: #121212; /* black button */
+  color: #fff;
+  border-radius: 8px;
+  padding: 12px 20px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+.btn-glow:hover {
+  background-color: #333;
+}
 </style>
+
