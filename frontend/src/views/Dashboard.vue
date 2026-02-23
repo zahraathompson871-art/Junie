@@ -1,6 +1,6 @@
 <template>
   <div class="main">
-    <div class="container mt-4">
+    <div class="container mt-4" v-if="user">
       <h2 class="text-glow mb-4">My Dashboard</h2>
 
       <!-- Stats -->
@@ -145,7 +145,6 @@
 </template>
 
 <script>
-import user from '../data/mockUser.js'
 import ApexGraph from '../components/ApexGraph.vue'
 import EChartGraph from '../components/EChartGraph.vue'
 
@@ -153,12 +152,34 @@ export default {
   components: { ApexGraph, EChartGraph },
   data() {
     return { 
-      user,
+      user:null,
       tasks: [
         { text: "Finish new template design", done: false },
         { text: "Upload product images", done: false },
         { text: "Respond to collab requests", done: false }
       ]
+    }
+  },
+
+  async mounted(){
+    const token = localStorage.getItem('token')
+
+    try{
+      const response = await fetch('http://localhost:500/api/users/me',{
+        headers: {Authorization: `Bearer ${token}`
+        }
+      })
+      const data = await response.json()
+
+      if(response.ok){
+        this.user = data
+      }else{
+        console.log(data.error)
+        this.$router.push({name: 'Login'})
+      }
+
+    }catch(err){
+      console.log("Error loading dashboard")
     }
   }
 }
