@@ -107,3 +107,21 @@ export const getCurrentUser = async (req, res, next) => {
         next(err);
     }
 };
+
+export const updateUser = async (req, res, next) =>{
+    try{
+        const{full_name, avatar} = req.body;
+        const email = req.user.email;
+        const updatedUser = await userModel.updateUserByEmail(email, {
+            full_name, avatar
+        });
+
+        if(!updatedUser){
+            return res.status(404).json({error: "User not found"});
+        }
+
+        res.status(200).json(updatedUser);
+    }catch(err){
+        next(err);
+    }
+};
