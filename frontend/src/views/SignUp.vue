@@ -21,18 +21,28 @@ export default {
     return { name: '', email: '', password: '' }
   },
   methods: {
-    signup() {
-      if (this.name && this.email && this.password) {
-        const newUser = {
-          id: Date.now(),
-          name: this.name,
-          email: this.email
+    async signup() {
+      try{
+        const response = await fetch('http://localhost:5000/api/users',{
+          method: 'POST',
+          headers:{'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            full_name: this.name,
+            email: this.email,
+            password: this.password
+          })
+        })
+        const data = await response.json()
+
+        if (response.ok){
+          alert("Account created")
+          this.$router.push({name: 'Login'})
+        }else{
+          alert(data.error)
         }
-        localStorage.setItem('user', JSON.stringify(newUser))
-        alert(`Account created for ${newUser.name}!`)
-        this.$router.push({ name: 'Dashboard' })
-      } else {
-        alert("Please fill in all fields")
+
+      }catch(err){
+        alert('Network error. Please try again.')
       }
     }
   }
