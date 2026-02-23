@@ -28,7 +28,7 @@ const router = createRouter({
 
 // ✅ Route Guard
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('user') // stored when login/signup succeeds
+  const isAuthenticated = localStorage.getItem('token') // stored when login/signup succeeds
 
   // Protect all main app sections
   const protectedRoutes = ['Dashboard', 'Marketplace', 'CreatorHub', 'Profile', 'Cart']
