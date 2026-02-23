@@ -93,4 +93,17 @@ export const loginUser = async (req, res, next) => {
     }catch (err){
         next(err);
     }
-}
+};
+
+export const getCurrentUser = async (req, res, next) => {
+    try{
+        const user = await userModel.getUserByEmail(req.user.email);
+
+        if (!user){return res.status(404).json({error: "User not found"});
+    }
+    res.status(200).json(user);
+
+    }catch(err){
+        next(err);
+    }
+};
