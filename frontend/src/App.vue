@@ -1,11 +1,9 @@
 <template>
+  <TopBar/>
   <router-view/>
 </template>
 
 <script>
-export default {
- mounted(){
-  document.title = "Junie — Your Growth Space"
- }
-}
+import TopBar from './components/TopBar.vue'
+export default { components: { TopBar } }
 </script>
