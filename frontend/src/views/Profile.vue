@@ -121,51 +121,57 @@ export default {
 .main {
   flex: 1;
   overflow-y: auto;
-  background-color: #0d0d0d;
-  color: #e0e0e0;
+  background-color: #fdfdf6; /* cream background */
+  color: #121212;            /* black text */
 }
 
 .text-glow {
-  color: #ffffff;
+  color: #121212;
   font-weight: 600;
 }
 
+/* Profile, Progress, Settings blocks */
 .profile-block, .progress-block, .settings-block {
-  background-color: #121212;
-  border: 1px solid #1f1f1f;
+  background-color: #ffffff; /* white cards */
+  border: 1px solid #ddd;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
 }
 
 .profile-img {
-  border: 3px solid #0c090f;
+  border: 3px solid #121212;
   width: 100px;
   height: 100px;
   object-fit: cover;
 }
 
+/* Badge */
 .bg-purple {
-  background-color: #1a0b26;
+  background-color: #121212; /* black badge */
+  color: #fff;
 }
 
+/* Progress bars */
 .progress {
-  background-color: #1f1f1f;
+  background-color: #f2f2f2; /* cream progress background */
   border-radius: 8px;
   overflow: hidden;
 }
-
 .progress-bar {
   height: 20px;
   font-size: 0.8rem;
   font-weight: 600;
+  background-color: #121212; /* black bar */
+  color: #fff;
 }
 
+/* Settings buttons */
 .settings-block {
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* spacing between buttons */
+  gap: 1rem;
 }
 
 .btn {
@@ -174,45 +180,44 @@ export default {
   font-weight: 600;
   cursor: pointer;
 }
-
 .btn-glow {
-  background-color: #160b1f;
+  background-color: #121212; /* black button */
   color: #fff;
   border: none;
   transition: background-color 0.3s ease;
 }
-
 .btn-glow:hover {
-  background-color: #180b25;
+  background-color: #333;
 }
-
 .btn-outline {
-  border: 1px solid #100916;
-  color: #110a16;
+  border: 1px solid #121212;
+  color: #121212;
   background: transparent;
 }
-
 .btn-outline:hover {
-  background-color: #15091f;
+  background-color: #121212;
   color: #fff;
 }
 
+/* Modals */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.4);
   display: flex;
   justify-content: center;
   align-items: center;
 }
-
 .modal-card {
-  background: #121212;
+  background: #ffffff; /* white modal */
+  color: #121212;
   padding: 2rem;
   border-radius: 12px;
   width: 100%;
   max-width: 400px;
   text-align: center;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 </style>
