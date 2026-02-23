@@ -28,12 +28,12 @@ const router = createRouter({
 
 // ✅ Route Guard
 router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('token') // stored when login/signup succeeds
+  const token = localStorage.getItem('token') // stored when login/signup succeeds
 
   // Protect all main app sections
   const protectedRoutes = ['Dashboard', 'Marketplace', 'CreatorHub', 'Profile', 'Cart']
 
-  if (protectedRoutes.includes(to.name) && !isAuthenticated) {
+  if (protectedRoutes.includes(to.name) && !token) {
     next({ name: 'Login' }) // redirect to login if not authenticated
   } else {
     next()
