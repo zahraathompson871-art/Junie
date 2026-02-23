@@ -1,11 +1,13 @@
 import express from "express";
-import{getUsers, getUser, createUser, deleteUserByEmail} from "../controllers/userCon.js"
+import{getUsers, getUser, createUser, deleteUserByEmail, loginUser} from "../controllers/userCon.js"
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", getUsers);
+router.get("/", protect, getUsers);
 router.get("/:id",getUser);
 router.post("/",createUser);
 router.delete("/", deleteUserByEmail);
+router.post("/login", loginUser);
 
 export default router;
