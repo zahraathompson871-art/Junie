@@ -1,69 +1,102 @@
-body {
- background:#0b0c12;
- color:#fff;
- font-family: Inter, sans-serif;
+.layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  height: 100vh;
+  background-color: #080101b9; /* solid black background */
 }
 
-a {
- color:#a9adc1;
- text-decoration:none;
+.main {
+  overflow-y: auto;
+  background-color: #0d0d0d; /* slightly lighter black for contrast */
+  color: #e0e0e0;            /* light gray text */
 }
 
-a.router-link-active {
- color:#7c6cff;
+
+/* Headings */
+.text-glow {
+  color: #ffffff;               /* clean white headings */
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
-.dark-card {
- background:#141622;
- border-radius:20px;
- padding:22px;
- border:1px solid rgba(124,108,255,.22);
- transition:.25s;
+/* Card styling (Publish + Apply + Product cards) */
+.card {
+  background-color: #090000;    /* deeper dark card background */
+  border: 1px solid #1f1f1f;    /* subtle border */
+  border-radius: 12px;          /* smooth rounded corners */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.8); /* stronger shadow for depth */
+  padding: 1.5rem;
+  color: #e0e0e0;               /* light gray text */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-2px);  /* slight lift on hover */
+  box-shadow: 0 6px 16px rgba(0,0,0,0.9);
 }
 
-.btn-glow {
- background:#7c6cff;
- color:white;
- border:none;
- border-radius:16px;
- padding:12px 22px;
- box-shadow:0 0 18px rgba(124,108,255,.35);
+.card h5, .card h6 {
+  color: #ffffff;               /* headings white */
+  font-weight: 600;
+  margin-bottom: 0.75rem;
 }
 
-.search {
- background:#151726;
- border:none;
- border-radius:14px;
- padding:8px 14px;
- color:white;
+.card p, .card span {
+  color: #b0b0b0;               /* softer gray for secondary text */
 }
 
-.text-muted2 {
- color:#838bb7;
+/* Form controls inside cards */
+.form-control {
+  background-color: #1a1a1a;    /* darker input background */
+  border: 1px solid #2a2a2a;
+  color: #e0e0e0;
+}
+.form-control::placeholder {
+  color: #777;
 }
 
-.glowup-card {
-  background-image: url("https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?fm=jpg&q=60&w=1200&auto=format&fit=crop");
-  background-size: cover;
-  background-position: center;
-  border-radius: 12px;
-  color: #fff;
-  min-height: 220px;
-  position: relative;
+/* Progress bars */
+.progress {
+  background-color: #2a2a2a;    /* dark progress background */
+  border-radius: 6px;
   overflow: hidden;
 }
-
-.glowup-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  border-radius: 12px;
-  pointer-events: none;
+.progress-bar {
+  background-color: #4caf50;    /* green accent for progress */
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
 }
 
-.glowup-card:hover::before { 
-    background: rgba(0,0,0,0.4);
- }
+/* Buttons */
+.btn-glow {
+  background-color: #1f1f1f;
+  color: #e0e0e0;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+.btn-glow:hover {
+  background-color: #2a2a2a;
+  transform: translateY(-1px);
+}
 
- 
+/* Sidebar */
+.sidebar {
+  background-color: #0d0d0d;    /* deep black sidebar */
+  color: #e0e0e0;
+  height: 100vh;
+  padding: 1rem;
+}
+.sidebar a {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: #e0e0e0;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.3s ease;
+}
+.sidebar a:hover {
+  background-color: #1f1f1f;
+}
