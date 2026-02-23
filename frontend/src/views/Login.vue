@@ -15,19 +15,31 @@
 </template>
 
 <script>
-import mockUser from '../data/mockUser.js'
-
 export default {
   data() {
     return { email: '', password: '' }
   },
   methods: {
-    login() {
-      if (this.email === mockUser.email && this.password) {
-        localStorage.setItem('user', JSON.stringify(mockUser))
-        this.$router.push({ name: 'Dashboard' })
-      } else {
-        alert("Invalid login details")
+    async login() {
+      try{
+        const response = await fetch('http://localhost:5000/api/users/login',{
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            email: this.email,
+            password: this.password
+          })
+        })
+        const data = await response.json()
+      
+        if (response.ok) {
+          localStorage.setItem('token', data.token)
+          this.$router.push({ name: 'Dashboard' })
+        } else {
+          alert(data.error)
+        }
+      }catch (err){
+        alert('Network error. Please try again.')
       }
     }
   }
