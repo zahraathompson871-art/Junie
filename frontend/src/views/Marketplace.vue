@@ -71,38 +71,45 @@ export default {
 .main {
   flex: 1;
   overflow-y: auto;
-  background-color: #0d0d0d;
-  color: #e0e0e0;
+  background-color: #fdfdf6; /* cream background */
+  color: #121212;            /* black text */
 }
+
 .text-glow {
-  color: #ffffff;
+  color: #121212;
   font-weight: 600;
 }
+
+/* Product Card */
 .product-card {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
+
 .product-image {
   position: relative;
-  background-color: #121212;
-  border: 1px solid #1f1f1f;
+  background-color: #ffffff; /* white card */
+  border: 1px solid #ddd;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   overflow: hidden;
 }
+
 .product-image img {
   width: 100%;
   border-radius: 12px;
   display: block;
 }
+
+/* Overlay */
 .overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.6); /* semi-transparent overlay */
+  background: rgba(253, 253, 246, 0.8); /* cream overlay */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -113,25 +120,32 @@ export default {
   opacity: 1; /* show overlay on hover */
 }
 .overlay-btn {
-  background-color: #1f102c;
+  background-color: #121212; /* black button */
   color: #fff;
   border-radius: 8px;
   padding: 0.6rem 1.2rem;
   font-weight: 600;
+  transition: background-color 0.3s ease;
 }
+.overlay-btn:hover {
+  background-color: #333;
+}
+
+/* Product Details */
 .product-details {
-  color: #e0e0e0;
+  color: #121212;
 }
 .product-title {
   font-weight: 600;
-  color: #ffffff;
+  color: #121212;
 }
 .product-description {
   font-size: 0.9rem;
   margin: 0.5rem 0;
+  color: #555;
 }
 .product-price {
   font-weight: 700;
-  color: #2d1138;
+  color: #121212;
 }
 </style>

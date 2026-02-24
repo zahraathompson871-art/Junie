@@ -108,56 +108,95 @@ export default {
 .main {
   flex: 1;
   overflow-y: auto;
-  background-color: #0d0d0d;
-  color: #e0e0e0;
+  background-color: #fdfdf6; /* cream background */
+  color: #121212;            /* black text */
 }
+
 .text-glow {
-  color: #ffffff;
+  color: #121212;
   font-weight: 600;
 }
+
+/* Sections (forms, collabs, etc.) */
 .section {
-  background-color: #121212;
-  border: 1px solid #1f1f1f;
+  background-color: #ffffff; /* white card */
+  border: 1px solid #ddd;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-bottom: 1.5rem;
 }
+
+/* Product Cards */
 .product-card {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 .product-image {
-  background-color: #121212;
-  border: 1px solid #1f1f1f;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   padding: 0.5rem;
 }
 .product-details {
-  color: #e0e0e0;
+  color: #121212;
 }
 .product-title {
   font-weight: 600;
-  color: #ffffff;
+  color: #121212;
 }
 .product-description {
   font-size: 0.9rem;
+  color: #555;
 }
 .product-price {
   font-weight: 700;
-  color: #1f0c27;
+  color: #121212;
 }
+
+/* Analytics Cards */
 .analytics {
   margin-top: 1rem;
 }
 .stat-card {
-  background: #1a1a1a;
+  background: #ffffff;
   padding: 1rem;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .stat-card h3 {
-  color: #140b1b;
+  color: #121212;
   margin: 0;
+}
+.stat-card p {
+  color: #555;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.75rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-glow {
+  background-color: #121212; /* black button */
+  color: #fff;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+.btn-glow:hover {
+  background-color: #333;
+}
+.btn-outline {
+  border: 1px solid #121212;
+  color: #121212;
+  background: transparent;
+}
+.btn-outline:hover {
+  background-color: #121212;
+  color: #fff;
 }
 </style>

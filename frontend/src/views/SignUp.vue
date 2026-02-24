@@ -55,14 +55,15 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100vh; /* full screen height */
-  background-color: #0d0d0d; /* Junie dark background */
+  background-color: #fdfdf6; /* cream background */
 }
 
 .auth-card {
-  background: #121212;
+  background: #ffffff; /* white card */
   padding: 2.5rem;
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   text-align: center;
   width: 100%;
   max-width: 400px;
@@ -72,11 +73,11 @@ export default {
   font-size: 1.8rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
-  color: #fff;
+  color: #121212; /* black text */
 }
 
 .highlight {
-  color: #9d4edd; /* Junie purple accent */
+  color: #121212; /* black accent */
 }
 
 .auth-form {
@@ -88,40 +89,44 @@ export default {
 .auth-input {
   padding: 0.75rem;
   border-radius: 6px;
-  border: 1px solid #2a2a2a;
-  background-color: #1a1a1a;
-  color: #e0e0e0;
+  border: 1px solid #ddd;
+  background-color: #fdfdf6; /* cream input background */
+  color: #121212;
 }
 
+.auth-input:focus {
+  border-color: #121212;
+  outline: none;
+}
+
+/* Buttons */
 .btn {
   padding: 0.75rem;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
 }
-
 .btn-glow {
-  background-color: #9d4edd;
+  background-color: #121212; /* black button */
   color: #fff;
   border: none;
   transition: background-color 0.3s ease;
 }
-
 .btn-glow:hover {
-  background-color: #7a2fc4;
+  background-color: #333;
 }
 
+/* Footer */
 .auth-footer {
   margin-top: 1rem;
   font-size: 0.9rem;
-  color: #ccc;
+  color: #555;
 }
-
 .auth-footer a {
-  color: #9d4edd;
+  color: #121212; /* black link */
   text-decoration: none;
+  font-weight: 600;
 }
-
 .auth-footer a:hover {
   text-decoration: underline;
 }
