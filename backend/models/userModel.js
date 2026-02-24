@@ -45,4 +45,43 @@ export const updateUserByEmail = async (email, updates) => {
     );
 
     return rows[0];
-}
+};
+
+export const createUserStats = async (userId) => {
+    await db.execute(
+        "INSERT INTO user_stats (user_id, views, engagement) VALUES (?, 0, 0)",
+        [userId]
+    );
+};
+
+export const createUserGoals = async (userId) => {
+    await db.execute(
+        "INSERT INTO goals (user_id, target, current, total) VALUES (?, 'Set your first goal', 0, 100)",
+        [userId]
+    );
+};
+
+export const createUserMotivation = async (userId) => {
+    await db.execute(
+        "INSERT INTO motivation (user_id, text) VALUES (?, ?),(?,?)",
+        [userId, "Stay consistent!", userId, "Keep pushing forward!"]
+    );
+};
+
+export const createUserChallenges = async (userId) => {
+    await db.execute(
+        "INSERT INTO challenges (user_id, title, participants, progress) VALUES (?, 'No challenge', 0, '0%')",
+        [userId, userId]
+    );
+};
+
+export const createUserTasks = async (userId) => {
+    await db.execute(
+        "INSERT INTO tasks (user_id, task_task, completed) VALUES (?, ?, 0),(?,?,0),(?,?,0)",
+        [
+            userId, "Finish new templates design",
+            userId, "Upload product images",
+            userId, "Respnd to collab requests",
+        ]
+    );
+};
