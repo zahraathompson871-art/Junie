@@ -33,6 +33,14 @@ export const createUser = async (req, res, next) => {
         const password_hash= await bcrypt.hash(password,10);
 
         const newUser = await userModel.createUser({full_name, email, password_hash});
+
+        const userId = newUser.insertId || newUser.user_id;
+
+        await userModel.createUserStats(userId);
+        await userModel.createUserGoals(userId);
+        await userModel.createUserMotivation(userId);
+        await userModel.createUserChallenges(userId);
+        await userModel.createUserTasks(userId);
         
         res.status(201).json(newUser);
     }catch (err){
