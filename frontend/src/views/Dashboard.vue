@@ -1,7 +1,7 @@
 <template>
   <div class="main">
     <div class="container mt-4">
-      <h2 class="text-glow mb-4">My Dashboard</h2>
+      <h2 class="text-glow mb-4">Dashboard</h2>
 
       <!-- Stats -->
       <div class="row g-4 mb-4">

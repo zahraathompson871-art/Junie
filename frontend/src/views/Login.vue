@@ -3,8 +3,20 @@
     <div class="auth-card">
       <h2 class="auth-title">Login to <span class="highlight">Junie</span></h2>
       <form @submit.prevent="login" class="auth-form">
-        <input type="email" placeholder="Email" v-model="email" class="auth-input" />
-        <input type="password" placeholder="Password" v-model="password" class="auth-input" />
+        <input 
+          type="email" 
+          placeholder="Email" 
+          v-model="email" 
+          class="auth-input" 
+          required
+        />
+        <input 
+          type="password" 
+          placeholder="Password" 
+          v-model="password" 
+          class="auth-input" 
+          required
+        />
         <button type="submit" class="btn btn-glow">Login</button>
       </form>
       <p class="auth-footer">
@@ -19,12 +31,20 @@ import mockUser from '../data/mockUser.js'
 
 export default {
   data() {
-    return { email: '', password: '' }
+    return { 
+      email: '', 
+      password: '' 
+    }
   },
   methods: {
     login() {
+      // Simple check: match email and require a password
       if (this.email === mockUser.email && this.password) {
-        localStorage.setItem('user', JSON.stringify(mockUser))
+        // ✅ enforce isProfileComplete when saving
+        const user = { ...mockUser, isProfileComplete: true }
+        localStorage.setItem('user', JSON.stringify(user))
+
+        alert(`Welcome back, ${user.name}!`)
         this.$router.push({ name: 'Dashboard' })
       } else {
         alert("Invalid login details")
@@ -33,6 +53,7 @@ export default {
   }
 }
 </script>
+
 
 <style scoped>
 .auth-container {
