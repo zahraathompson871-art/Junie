@@ -27,7 +27,20 @@
           <GoalWidget :data="{ current: 3, total: 10, target: 'Complete 10 study sessions' }"/>
           <PomodoroWidget />
         </div>
-      </div>
+      </transition>
+
+      <!-- Widgets Grid -->
+      <draggable v-model="widgets" class="widgets-grid" item-key="id" ghost-class="ghost">
+        <template #item="{element}">
+          <div class="widget-wrapper">
+            <component
+              v-if="resolveWidget(element.type)"
+              :is="resolveWidget(element.type)"
+              :data="element.data"
+            />
+          </div>
+        </template>
+      </draggable>
     </div>
   </div>
 </template>
