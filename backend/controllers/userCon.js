@@ -30,11 +30,16 @@ export const createUser = async (req, res, next) => {
             return res.status(400).json({error:"All fields are required"});
         }
 
+        const existingUser = await userModel.getUserByEmail(email);
+        if (existingUser) {
+            return res.status(409).json({ error: "Email already exists" });
+        }
+
         const password_hash= await bcrypt.hash(password,10);
 
         const newUser = await userModel.createUser({full_name, email, password_hash});
-
-        const userId = newUser.insertId || newUser.user_id;
+        const createdUser = await userModel.getUserByEmail(email);
+        const userId = createdUser?.users_id || createdUser?.user_id || newUser.id || newUser.insertId;
 
         await userModel.createUserStats(userId);
         await userModel.createUserGoals(userId);
@@ -44,6 +49,9 @@ export const createUser = async (req, res, next) => {
         
         res.status(201).json(newUser);
     }catch (err){
+        if (err?.code === "ER_DUP_ENTRY") {
+            return res.status(409).json({ error: "Email already exists" });
+        }
         next(err);
     }
 };
@@ -89,7 +97,7 @@ export const loginUser = async (req, res, next) => {
         }
 
         const token = jwt.sign(
-            {id: user.user_id, email: user.email},
+            {id: user.users_id || user.user_id, email: user.email},
             process.env.JWT_SECRET,
             {expiresIn: "1h"}
         );
