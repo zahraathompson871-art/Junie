@@ -40,48 +40,73 @@ export const updateUserByEmail = async (email, updates) => {
 
     if(result.affectedRows === 0) return null;
 
-    const[rows] = await db.query(
-        "SELECT user_id, full_name, email, avatar FROM users WHERE email = ?",[email]
+    const[rows] = await pool.query(
+        "SELECT users_id, full_name, email, avatar FROM users WHERE email = ?",[email]
     );
 
     return rows[0];
 };
 
 export const createUserStats = async (userId) => {
-    await db.execute(
+    await pool.execute(
         "INSERT INTO user_stats (user_id, views, engagement) VALUES (?, 0, 0)",
         [userId]
     );
 };
 
 export const createUserGoals = async (userId) => {
-    await db.execute(
+    await pool.execute(
         "INSERT INTO goals (user_id, target, current, total) VALUES (?, 'Set your first goal', 0, 100)",
         [userId]
     );
 };
 
 export const createUserMotivation = async (userId) => {
-    await db.execute(
+    await pool.execute(
         "INSERT INTO motivation (user_id, text) VALUES (?, ?),(?,?)",
         [userId, "Stay consistent!", userId, "Keep pushing forward!"]
     );
 };
 
 export const createUserChallenges = async (userId) => {
-    await db.execute(
+    await pool.execute(
         "INSERT INTO challenges (user_id, title, participants, progress) VALUES (?, 'No challenge', 0, '0%')",
-        [userId, userId]
+        [userId]
     );
 };
 
 export const createUserTasks = async (userId) => {
-    await db.execute(
-        "INSERT INTO tasks (user_id, task_task, completed) VALUES (?, ?, 0),(?,?,0),(?,?,0)",
+    await pool.execute(
+        "INSERT INTO tasks (user_id, task_text, completed) VALUES (?, ?, 0),(?,?,0),(?,?,0)",
         [
             userId, "Finish new templates design",
             userId, "Upload product images",
             userId, "Respnd to collab requests",
         ]
     );
+};
+
+export const getUserDashboard = async (userId) => {
+    const [rows] = await pool.query(
+        "SELECT id, widget_type, widget_data, position FROM dashboard_widgets WHERE users_id = ? ORDER BY position ASC", [userId]
+    );
+    return rows.map(widget => ({
+        id: widget.id,
+        type: widget.widget_type,
+        data: typeof widget.widget_data === "string"
+            ? JSON.parse(widget.widget_data)
+            : (widget.widget_data || {})
+    }));
+};
+
+export const saveUserDashboard = async (userId, widgets) => {
+    await pool.query("DELETE FROM dashboard_widgets WHERE users_id = ?", [userId]);
+
+    for (let i = 0; i < widgets.length; i++) {
+        const widget = widgets[i];
+        await pool.query(
+            "INSERT INTO dashboard_widgets (users_id, widget_type, widget_data, position) VALUES (?, ?, ?, ?)",
+            [userId, widget.type, JSON.stringify(widget.data), i]
+        );
+    }
 };
