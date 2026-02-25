@@ -1,7 +1,7 @@
 <template>
   <div class="checkout-block">
     <h2 class="text-glow">Checkout</h2>
-    <form @submit.prevent="placeOrder" class="checkout-form">
+    <form class="checkout-form">
       <div class="form-group">
         <label for="name">Full Name</label>
         <input v-model="customer.name" id="name" required />
@@ -20,32 +20,152 @@
       <h3 class="text-glow">Order Summary</h3>
       <ul>
         <li v-for="item in cart.items" :key="item.id">
-          {{ item.title }} - R{{ item.price }} × {{ item.quantity }}
+          {{ item.title }} - R{{ item.price }}
         </li>
       </ul>
       <p class="total">Total: R{{ cart.total }}</p>
 
-      <button type="submit" class="btn-glow">Place Order</button>
+      <p v-if="paymentError" class="status error">{{ paymentError }}</p>
+      <p v-if="paymentSuccess" class="status success">{{ paymentSuccess }}</p>
+
+      <div v-if="cart.items.length > 0" ref="paypalButtons" class="paypal-buttons mt-3"></div>
+      <button
+        v-if="cart.items.length > 0 && !paypalReady"
+        type="button"
+        class="btn-glow"
+        @click="initPaypal"
+      >
+        Load PayPal
+      </button>
     </form>
   </div>
 </template>
 
 <script>
+import { reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 
 export default {
   name: "Checkout",
   setup() {
     const cart = useCartStore()
-    const customer = { name: '', email: '', address: '' }
-
-    const placeOrder = () => {
-      console.log("Order placed:", customer, cart.items)
-
-      window.location.href = "/thankyou"
+    const router = useRouter()
+    const customer = reactive({ name: '', email: '', address: '' })
+    return { cart, router, customer }
+  },
+  data() {
+    return {
+      paypalReady: false,
+      paymentError: '',
+      paymentSuccess: ''
     }
+  },
+  async mounted() {
+    if (this.cart.items.length > 0) {
+      await this.initPaypal()
+    }
+  },
+  methods: {
+    getApiBaseUrl() {
+      return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+    },
+    getToken() {
+      return localStorage.getItem('token') || ''
+    },
+    getPaypalCurrency() {
+      return (import.meta.env.VITE_PAYPAL_CURRENCY || 'USD').toUpperCase()
+    },
+    async loadPaypalSdk() {
+      if (window.paypal) return
 
-    return { cart, customer, placeOrder }
+      const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID
+      if (!clientId) {
+        throw new Error('Missing VITE_PAYPAL_CLIENT_ID in frontend env')
+      }
+
+      await new Promise((resolve, reject) => {
+        const existing = document.getElementById('paypal-sdk-script')
+        if (existing) {
+          existing.addEventListener('load', resolve, { once: true })
+          existing.addEventListener('error', () => reject(new Error('Failed to load PayPal SDK')), { once: true })
+          return
+        }
+
+        const script = document.createElement('script')
+        script.id = 'paypal-sdk-script'
+        script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${encodeURIComponent(this.getPaypalCurrency())}&intent=capture`
+        script.async = true
+        script.onload = resolve
+        script.onerror = () => reject(new Error('Failed to load PayPal SDK'))
+        document.head.appendChild(script)
+      })
+    },
+    async initPaypal() {
+      try {
+        this.paymentError = ''
+        this.paymentSuccess = ''
+        await this.loadPaypalSdk()
+        await this.renderPaypalButtons()
+        this.paypalReady = true
+      } catch (err) {
+        this.paymentError = err.message || 'Failed to initialize PayPal'
+      }
+    },
+    async renderPaypalButtons() {
+      if (!this.$refs.paypalButtons || !window.paypal) return
+
+      this.$refs.paypalButtons.innerHTML = ''
+      const vm = this
+
+      await window.paypal.Buttons({
+        createOrder: async () => {
+          const response = await fetch(`${vm.getApiBaseUrl()}/api/paypal/create-order`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${vm.getToken()}`
+            },
+            body: JSON.stringify({
+              cartItems: vm.cart.items,
+              totalAmount: vm.cart.total
+            })
+          })
+
+          const data = await response.json()
+          if (!response.ok) {
+            throw new Error(data.message || 'Failed to create PayPal order')
+          }
+
+          return data.id
+        },
+        onApprove: async (data) => {
+          const response = await fetch(`${vm.getApiBaseUrl()}/api/paypal/capture-order`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${vm.getToken()}`
+            },
+            body: JSON.stringify({
+              orderID: data.orderID,
+              cartItems: vm.cart.items
+            })
+          })
+
+          const result = await response.json()
+          if (!response.ok) {
+            throw new Error(result.message || 'Failed to capture PayPal payment')
+          }
+
+          vm.paymentSuccess = 'Payment successful'
+          vm.cart.clearCart()
+          vm.router.push('/thankyou')
+        },
+        onError: (err) => {
+          vm.paymentError = err?.message || 'PayPal encountered an error'
+        }
+      }).render(this.$refs.paypalButtons)
+    }
   }
 }
 </script>
@@ -126,4 +246,23 @@ li {
 .btn-glow:hover {
   background-color: #333;
 }
+
+.paypal-buttons {
+  min-height: 45px;
+}
+
+.status {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.status.error {
+  color: #a12424;
+}
+
+.status.success {
+  color: #1c7a33;
+}
 </style>
+
