@@ -3,9 +3,27 @@
     <div class="auth-card">
       <h2 class="auth-title">Create Your <span class="highlight">Junie</span> Account</h2>
       <form @submit.prevent="signup" class="auth-form">
-        <input type="text" placeholder="Name" v-model="name" class="auth-input" />
-        <input type="email" placeholder="Email" v-model="email" class="auth-input" />
-        <input type="password" placeholder="Password" v-model="password" class="auth-input" />
+        <input 
+          type="text" 
+          placeholder="Name" 
+          v-model="name" 
+          class="auth-input" 
+          required
+        />
+        <input 
+          type="email" 
+          placeholder="Email" 
+          v-model="email" 
+          class="auth-input" 
+          required
+        />
+        <input 
+          type="password" 
+          placeholder="Password" 
+          v-model="password" 
+          class="auth-input" 
+          required
+        />
         <button type="submit" class="btn btn-glow">Sign Up</button>
       </form>
       <p class="auth-footer">
@@ -18,7 +36,11 @@
 <script>
 export default {
   data() {
-    return { name: '', email: '', password: '' }
+    return { 
+      name: '', 
+      email: '', 
+      password: '' 
+    }
   },
   methods: {
     async signup() {
@@ -48,6 +70,7 @@ export default {
   }
 }
 </script>
+
 
 <style scoped>
 .auth-container {

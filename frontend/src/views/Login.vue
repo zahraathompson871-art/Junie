@@ -3,8 +3,20 @@
     <div class="auth-card">
       <h2 class="auth-title">Login to <span class="highlight">Junie</span></h2>
       <form @submit.prevent="login" class="auth-form">
-        <input type="email" placeholder="Email" v-model="email" class="auth-input" />
-        <input type="password" placeholder="Password" v-model="password" class="auth-input" />
+        <input 
+          type="email" 
+          placeholder="Email" 
+          v-model="email" 
+          class="auth-input" 
+          required
+        />
+        <input 
+          type="password" 
+          placeholder="Password" 
+          v-model="password" 
+          class="auth-input" 
+          required
+        />
         <button type="submit" class="btn btn-glow">Login</button>
       </form>
       <p class="auth-footer">
@@ -17,7 +29,10 @@
 <script>
 export default {
   data() {
-    return { email: '', password: '' }
+    return { 
+      email: '', 
+      password: '' 
+    }
   },
   methods: {
     async login() {
@@ -45,6 +60,7 @@ export default {
   }
 }
 </script>
+
 
 <style scoped>
 .auth-container {
