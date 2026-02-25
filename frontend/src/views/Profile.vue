@@ -1,6 +1,6 @@
 <template>
   <div class="main">
-    <div class="container mt-4">
+    <div class="container mt-4" v-if="user">
       <h2 class="text-glow mb-4">Profile</h2>
       
       <!-- Profile Card -->
@@ -72,21 +72,38 @@
 </template>
 
 <script>
-import mockUser from '../data/mockUser.js'
-
 export default {
   data() {
     return {
-      user: {
-        ...mockUser,
-        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1976&auto=format&fit=crop&ixlib=rb-4.1.0"
-      },
+      user:null,
       showEdit: false,
       showPassword: false,
       newPassword: '',
       confirmPassword: ''
     }
   },
+  async mounted(){
+      const token = localStorage.getItem('token')
+
+      try{
+        const response = await fetch('http://localhost:5000/api/users/me',{
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        const data = await response.json()
+
+        if (response.ok){
+          this.user = data
+        }else{
+          this.$router.push({ name: 'Login'})
+        }
+
+      }catch(err){
+        console.log("Error Loading Profile")
+      }
+    }, 
+
   methods: {
     uploadAvatar(event) {
       const file = event.target.files[0]
@@ -94,11 +111,32 @@ export default {
         this.user.avatar = URL.createObjectURL(file)
       }
     },
-    saveProfile() {
-      localStorage.setItem('user', JSON.stringify(this.user))
-      alert("Profile updated successfully!")
-      this.showEdit = false
+
+    async saveProfile() {
+      const token = localStorage.getItem('token')
+
+      try{
+        const response = await fetch('http://localhost:5000/api/users',{
+          method:'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(this.user)
+        })
+
+        if(response.ok){
+          alert("Profile updated successfully!")
+          this.showEdit = false
+        }else{
+          alert("Failed to update profile")
+        }
+
+      }catch(err){
+        console.log("Update error")
+      } 
     },
+
     changePassword() {
       if (this.newPassword && this.newPassword === this.confirmPassword) {
         alert("Password updated successfully!")
@@ -110,7 +148,7 @@ export default {
       }
     },
     logout() {
-      localStorage.removeItem('user')
+      localStorage.removeItem('token')
       this.$router.push({ name: 'Home' })
     }
   }
