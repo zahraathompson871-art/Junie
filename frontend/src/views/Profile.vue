@@ -7,7 +7,7 @@
       <div class="profile-block text-center mb-4">
         <img :src="user.avatar || 'https://via.placeholder.com/100'" 
              class="rounded-circle mb-3 profile-img" alt="Profile">
-        <h5>{{ user.name }}</h5>
+        <h5>{{ user.full_name }}</h5>
         <p>Email: {{ user.email }}</p>
         <span class="badge bg-purple">Creator</span>
       </div>
@@ -46,7 +46,7 @@
       <div v-if="showEdit" class="modal-overlay">
         <div class="modal-card">
           <h5>Edit Profile</h5>
-          <input class="form-control mb-2" v-model="user.name" placeholder="Full Name">
+          <input class="form-control mb-2" v-model="user.full_name" placeholder="Full Name">
           <input class="form-control mb-2" v-model="user.email" placeholder="Email">
 
           <!-- Profile Picture Upload -->
@@ -116,7 +116,7 @@ export default {
       const token = localStorage.getItem('token')
 
       try{
-        const response = await fetch('http://localhost:5000/api/users',{
+        const response = await fetch('http://localhost:5000/api/users/me',{
           method:'PUT',
           headers: {
             'Content-Type': 'application/json',
