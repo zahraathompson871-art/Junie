@@ -1,41 +1,35 @@
 <template>
   <div class="main">
     <div class="container mt-4">
-      <h2 class="text-glow mb-4">My Dashboard</h2>
-      <div class="row g-4 mb-4">
-        <div class="col-md-12">
-
-          <div class="d-flex justify-content-between align-items-center mb-3"></div>
-          <h5>Widgets</h5>
-          <button class="btn btn-dark" @click="showWidgetMenu = !showWidgetMenu" >
-            + Add Widget
-          </button>
-
-          <div v-if="showWidgetMenu" class="widget-menu">
-            <button class="btn btn-outline-dark w-100 mb-2" @click="addWidgets('todo')">
-              To-Do List
-            </button>
-            <button class="btn btn-outline-dark w-100 mb-2" @click="addWidgets('goal')">
-              Goal Tracker
-            </button>
-            <button class="btn btn-outline-dark w-100 mb-2" @click="addWidgets('pomodoro')">
-              Pomodoro Timer
-            </button>
-          </div>
-
-          <draggable v-model="widgets" class="row g-4" item-key="id" ghost-class="ghost">
-            <template #item="{element}">
-              <div class="col-md-4">
-                <component
-                  v-if="resolveWidget(element.type)"
-                  :is="resolveWidget(element.type)"
-                  :data="element.data"
-                />
-              </div>
-            </template>
-          </draggable>
-        </div>
+      <!-- Dashboard Header -->
+      <div class="dashboard-header mb-4">
+        <h2 class="dashboard-title">My Dashboard</h2>
+        <button class="btn add-widget" @click="showWidgetMenu = !showWidgetMenu">
+          + Add Widget
+        </button>
       </div>
+
+      <!-- Widget Menu -->
+      <transition name="fade">
+        <div v-if="showWidgetMenu" class="widget-menu">
+          <button class="btn widget-btn" @click="addWidgets('todo')">To-Do List</button>
+          <button class="btn widget-btn" @click="addWidgets('goal')">Goal Tracker</button>
+          <button class="btn widget-btn" @click="addWidgets('pomodoro')">Pomodoro Timer</button>
+        </div>
+      </transition>
+
+      <!-- Widgets Grid -->
+      <draggable v-model="widgets" class="widgets-grid" item-key="id" ghost-class="ghost">
+        <template #item="{element}">
+          <div class="widget-wrapper">
+            <component
+              v-if="resolveWidget(element.type)"
+              :is="resolveWidget(element.type)"
+              :data="element.data"
+            />
+          </div>
+        </template>
+      </draggable>
     </div>
   </div>
 </template>
@@ -44,252 +38,106 @@
 import draggable from 'vuedraggable';
 import ToDoWidget from '../components/widgets/toDoWidget.vue';
 import GoalWidget from '../components/widgets/goalWidget.vue';
-import pomodoroWidget from '../components/widgets/pomodoroWidget.vue';
+import PomodoroWidget from '../components/widgets/pomodoroWidget.vue';
 
 export default {
-  components:{
-    draggable,
-    ToDoWidget,
-    GoalWidget,
-    pomodoroWidget
-  },
+  components: { draggable, ToDoWidget, GoalWidget, PomodoroWidget },
 
   data() {
-    return {
-      showWidgetMenu: false,
-      widgets: [],
-      authToken: "",
-      isDashboardLoaded: false,
-      saveTimer: null
-    };
+    return { showWidgetMenu: false, widgets: [], authToken: "", isDashboardLoaded: false, saveTimer: null };
   },
-  async mounted() {
-    await this.loadDashboard();
-  },
-  beforeUnmount() {
-    if (this.saveTimer) {
-      clearTimeout(this.saveTimer);
-    }
-  },
+
+  async mounted() { await this.loadDashboard(); },
+
+  beforeUnmount() { if (this.saveTimer) clearTimeout(this.saveTimer); },
+
   methods: {
     getDefaultWidgets() {
       return [
-        {
-          id: 1,
-          type: "todo",
-          data: [
-            { text: "Finish AI assignment", done: false },
-            { text: "Study 2 hours", done: false }
-          ]
-        },
-        {
-          id: 2,
-          type: "goal",
-          data: { current: 3, total: 10, target: "Complete 10 study sessions" }
-        },
-        {
-          id: 3,
-          type: "pomodoro",
-          data: {}
-        }
+        { id: 1, type: "todo", data: [{ text: "Finish AI assignment", done: false }, { text: "Study 2 hours", done: false }] },
+        { id: 2, type: "goal", data: { current: 3, total: 10, target: "Complete 10 study sessions" } },
+        { id: 3, type: "pomodoro", data: {} }
       ];
     },
+
     async loadDashboard() {
       const token = localStorage.getItem("token");
       this.authToken = token || "";
-
-      if (!this.authToken) {
-        this.widgets = this.getDefaultWidgets();
-        this.isDashboardLoaded = true;
-        return;
-      }
+      if (!this.authToken) { this.widgets = this.getDefaultWidgets(); this.isDashboardLoaded = true; return; }
 
       try {
-        const response = await fetch("http://localhost:5000/api/users/dashboard", {
-          headers: {
-            Authorization: `Bearer ${this.authToken}`
-          }
-        });
-
+        const response = await fetch("http://localhost:5000/api/users/dashboard", { headers: { Authorization: `Bearer ${this.authToken}` } });
         if (!response.ok) throw new Error("Failed to load dashboard");
 
         const dashboard = await response.json();
-        if (Array.isArray(dashboard) && dashboard.length > 0) {
-          this.widgets = dashboard;
-        } else {
-          this.widgets = this.getDefaultWidgets();
-          await this.saveDashboard();
-        }
-      } catch (err) {
-        this.widgets = this.getDefaultWidgets();
-      } finally {
-        this.isDashboardLoaded = true;
-      }
+        if (Array.isArray(dashboard) && dashboard.length > 0) this.widgets = dashboard;
+        else { this.widgets = this.getDefaultWidgets(); await this.saveDashboard(); }
+      } catch (err) { this.widgets = this.getDefaultWidgets(); }
+      finally { this.isDashboardLoaded = true; }
     },
-    async saveDashboard() {
-      if (!this.authToken) return;
 
-      await fetch("http://localhost:5000/api/users/dashboard", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.authToken}`
-        },
-        body: JSON.stringify({ dashboard: this.widgets })
-      });
-    },
-    queueSave() {
-      if (!this.isDashboardLoaded) return;
-      if (this.saveTimer) clearTimeout(this.saveTimer);
-      this.saveTimer = setTimeout(() => {
-        this.saveDashboard();
-      }, 250);
-    },
-    resolveWidget(type) {
-      const map = {
-        todo: ToDoWidget,
-        goal: GoalWidget,
-        pomodoro: pomodoroWidget
-      };
-      return map[type] || null;
-    },
-    addWidgets(type) {
-      const newWidget = {
-        id: Date.now(),
-        type,
-        data: this.getDefaultData(type)
-      };
-      this.widgets.push(newWidget);
-      this.showWidgetMenu = false;
-    },
-    getDefaultData(type) {
-      const defaults = {
-        todo: [
-          { text: 'New Task ', done: false }
-        ],
-        goal: { current: 0, total: 10, target: 'New Goal' },
-        pomodoro: {}
-      };
-      return defaults[type] || {};
-    }
+    async saveDashboard() { if (!this.authToken) return; await fetch("http://localhost:5000/api/users/dashboard", { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.authToken}` }, body: JSON.stringify({ dashboard: this.widgets }) }); },
+
+    queueSave() { if (!this.isDashboardLoaded) return; if (this.saveTimer) clearTimeout(this.saveTimer); this.saveTimer = setTimeout(() => this.saveDashboard(), 250); },
+
+    resolveWidget(type) { const map = { todo: ToDoWidget, goal: GoalWidget, pomodoro: PomodoroWidget }; return map[type] || null; },
+
+    addWidgets(type) { this.widgets.push({ id: Date.now(), type, data: this.getDefaultData(type) }); this.showWidgetMenu = false; },
+
+    getDefaultData(type) { const defaults = { todo: [{ text: 'New Task', done: false }], goal: { current: 0, total: 10, target: 'New Goal' }, pomodoro: {} }; return defaults[type] || {}; }
   },
 
-  watch:{
-    widgets:{
-      handler(){
-        this.queueSave();
-      },
-      deep: true
-    }
-  }
+  watch: { widgets: { handler() { this.queueSave(); }, deep: true } }
 };
-
-
-
 </script>
 
 <style scoped>
-.main {
-  flex: 1;
-  overflow-y: auto;
-  background-color: #fdfdf6; /* cream background */
-  color: #121212;            /* black text */
-}
+/* ===== Main Background ===== */
+.main { flex: 1; min-height: 100vh; background: linear-gradient(135deg,#f5f7fa,#c3cfe2); padding-bottom: 2rem; font-family: 'Segoe UI', sans-serif; }
 
-.text-glow {
-  color: #121212;
-  font-weight: 600;
-}
+/* ===== Header ===== */
+.dashboard-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 2rem; }
+.dashboard-title { font-size: 3rem; font-weight: 700; background: linear-gradient(90deg,#4a90e2,#2ecc71); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-.stat-block, .progress-block, .motivation-block, .challenge-block,
-.notification-block, .community-block, .task-block, .goal-block, .graph-block {
-  background-color: #ffffff; /* white cards */
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
+.btn.add-widget { padding: 0.8rem 1.6rem; font-weight: 600; border-radius: 12px; background: #4a90e2; color: #fff; border: none; box-shadow: 0 6px 15px rgba(0,0,0,0.2); transition: 0.3s; }
+.btn.add-widget:hover { background: #3d7cc4; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.25); }
 
-/* Task list */
-.task-list {
-  list-style: none;
-  padding-left: 0;
-}
-.task-list li {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-.completed {
-  text-decoration: line-through;
-  color: #888;
-}
+/* ===== Widget Menu ===== */
+.widget-menu { background: #fff; border-radius: 12px; padding: 1rem; margin-bottom: 2rem; box-shadow: 0 6px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 0.6rem; }
+.widget-menu .widget-btn { padding: 0.6rem 1rem; border-radius: 10px; font-weight: 600; border: 2px solid #4a90e2; color: #4a90e2; background: transparent; transition: 0.3s; }
+.widget-menu .widget-btn:hover { background: #4a90e2; color: #fff; transform: translateY(-1px); }
 
-/* Progress bars */
-.progress {
-  background-color: #f2f2f2; /* cream progress background */
-  border-radius: 8px;
-  overflow: hidden;
-}
-.progress-bar {
-  height: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background-color: #121212; /* black bar */
-  color: #fff;
-}
+/* ===== Widgets Grid ===== */
+.widgets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px,1fr)); gap: 2rem; }
 
-/* Buttons */
-.btn {
-  padding: 0.75rem 1.2rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
+/* ===== Widget Cards ===== */
+.widget-wrapper .widget-card { 
+  background: linear-gradient(145deg,#ffffff,#f9f9f9); 
+  border-radius: 18px; 
+  padding: 1.5rem; 
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12); 
+  transition: transform 0.3s, box-shadow 0.3s; 
+  min-height: 220px; 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: space-between; 
+  border-left: 6px solid #4a90e2; 
 }
-.btn-glow {
-  background-color: #121212; /* black button */
-  color: #fff;
-  border: none;
-  transition: background-color 0.3s ease;
-}
-.btn-glow:hover {
-  background-color: #333;
-}
-.btn-outline {
-  border: 1px solid #121212;
-  color: #121212;
-  background: transparent;
-}
-.btn-outline:hover {
-  background-color: #121212;
-  color: #fff;
-}
+.widget-wrapper .widget-card:hover { transform: translateY(-5px); box-shadow: 0 18px 35px rgba(0,0,0,0.2); }
 
+/* ===== Ghost for Drag ===== */
+.ghost { opacity: 0.5; border: 2px dashed #4a90e2; }
 
+/* ===== Fade Transition ===== */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
-.ghost {
-  opacity: 0.4;
-}
-
-.widget-card{
-  background-color: #ffffff; 
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  cursor: grab;
-}
-
-.widget-card:active {
-  cursor: grabbing;
-}
-
-.widget-menu {
-  background-color: #ffffff; 
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-}
+/* ===== Make widget content bigger ===== */
+.widget-card h5 { font-size: 1.3rem; font-weight: 600; }
+.widget-card p, .widget-card .percentage, .widget-card .task-text { font-size: 1rem; }
+.widget-card .progress-wrapper { height: 12px; }
+.widget-card .progress-bar { height: 100%; }
+.widget-card .timer-display { font-size: 3rem; font-weight: 700; }
+.widget-card .button-group .btn { padding: 0.7rem 1.2rem; font-size: 14px; }
+.widget-card .checkbox { width: 20px; height: 20px; }
 </style>
