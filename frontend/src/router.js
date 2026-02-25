@@ -33,8 +33,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const user = JSON.parse(localStorage.getItem('user'))
-  const isAuthenticated = !!user
+  const token = localStorage.getItem('token') // stored when login/signup succeeds
 
   const protectedRoutes = [
     'Dashboard', 'Marketplace', 'CreatorHub', 'Profile', 'Cart', 'Checkout', 'ThankYou'
@@ -42,12 +41,10 @@ router.beforeEach((to, from, next) => {
 
   console.log('Navigation:', from.name, '→', to.name, 'User:', user) // ✅ debug log
 
-  if (protectedRoutes.includes(to.name) && !isAuthenticated) {
-    return next({ name: 'Login' })
-  }
-
-  if (isAuthenticated && !user.isProfileComplete && to.name !== 'CreateAccount') {
-    return next({ name: 'CreateAccount' })
+  if (protectedRoutes.includes(to.name) && !token) {
+    next({ name: 'Login' }) // redirect to login if not authenticated
+  } else {
+    next()
   }
 
   next()
