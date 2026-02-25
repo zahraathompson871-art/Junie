@@ -16,8 +16,8 @@ export default{
     props: ['data'],
     computed: {
         percentage() {
-            if (this.data.total) return 0
-                return (this.data.current / this.data.total) * 100 
+            if (!this.data?.total) return 0;
+            return (this.data.current / this.data.total) * 100;
         }
     }
 }
