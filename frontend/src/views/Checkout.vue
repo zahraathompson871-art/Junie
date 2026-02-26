@@ -1,7 +1,7 @@
 <template>
   <div class="checkout-block">
     <h2 class="text-glow">Checkout</h2>
-    <form @submit.prevent="placeOrder" class="checkout-form">
+    <form class="checkout-form">
       <div class="form-group">
         <label for="name">Full Name</label>
         <input v-model="customer.name" id="name" required />
@@ -20,40 +20,104 @@
       <h3 class="text-glow">Order Summary</h3>
       <ul>
         <li v-for="item in cart.items" :key="item.id">
-          {{ item.title }} - R{{ item.price }} × {{ item.quantity }}
+          {{ item.title }} - R{{ item.price }}
         </li>
       </ul>
       <p class="total">Total: R{{ cart.total }}</p>
 
-      <button type="submit" class="btn-glow">Place Order</button>
+      <p v-if="paymentError" class="status error">{{ paymentError }}</p>
+
+      <div class="actions" v-if="cart.items.length > 0">
+        <button type="button" class="btn-glow" :disabled="startingCheckout" @click="startStripeCheckout">
+          {{ startingCheckout ? 'Redirecting...' : 'Pay with Stripe' }}
+        </button>
+      </div>
     </form>
   </div>
 </template>
 
 <script>
+import { reactive } from 'vue'
 import { useCartStore } from '../stores/cart'
 
 export default {
-  name: "Checkout",
+  name: 'Checkout',
   setup() {
     const cart = useCartStore()
-    const customer = { name: '', email: '', address: '' }
-
-    const placeOrder = () => {
-      console.log("Order placed:", customer, cart.items)
-
-      window.location.href = "/thankyou"
+    const customer = reactive({ name: '', email: '', address: '' })
+    return { cart, customer }
+  },
+  data() {
+    return {
+      startingCheckout: false,
+      paymentError: ''
     }
+  },
+  mounted() {
+    if (this.$route?.query?.canceled) {
+      this.paymentError = 'Stripe checkout was canceled.'
+    }
+  },
+  methods: {
+    getApiBaseUrl() {
+      return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+    },
+    getToken() {
+      return localStorage.getItem('token') || ''
+    },
+    async parseJson(response) {
+      try {
+        return await response.json()
+      } catch {
+        return {}
+      }
+    },
+    validateCustomer() {
+      if (!this.customer.name || !this.customer.email || !this.customer.address) {
+        throw new Error('Please complete all customer fields before payment.')
+      }
+      if (!this.cart.items.length) {
+        throw new Error('Your cart is empty.')
+      }
+    },
+    async startStripeCheckout() {
+      try {
+        this.validateCustomer()
+        this.paymentError = ''
+        this.startingCheckout = true
 
-    return { cart, customer, placeOrder }
+        const response = await fetch(`${this.getApiBaseUrl()}/api/stripe/create-checkout-session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.getToken()}`
+          },
+          body: JSON.stringify({
+            cartItems: this.cart.items,
+            customer: this.customer
+          })
+        })
+
+        const data = await this.parseJson(response)
+        if (!response.ok || !data.url) {
+          throw new Error(data.message || 'Failed to start Stripe checkout')
+        }
+
+        window.location.href = data.url
+      } catch (err) {
+        this.paymentError = err.message || 'Failed to start Stripe checkout'
+      } finally {
+        this.startingCheckout = false
+      }
+    }
   }
 }
 </script>
 
 <style scoped>
 .checkout-block {
-  background: #ffffff; /* white card */
-  color: #121212;      /* black text */
+  background: #ffffff;
+  color: #121212;
   padding: 20px;
   border-radius: 12px;
   border: 1px solid #ddd;
@@ -63,7 +127,7 @@ export default {
 }
 
 .text-glow {
-  color: #121212; /* black accent */
+  color: #121212;
   font-weight: 600;
 }
 
@@ -85,22 +149,17 @@ label {
 input {
   width: 100%;
   padding: 10px;
-  background: #fdfdf6; /* cream input background */
+  background: #fdfdf6;
   border: 1px solid #ddd;
   border-radius: 8px;
   color: #121212;
 }
 
-input:focus {
-  border-color: #121212;
-  outline: none;
-}
-
-/* Order Summary */
 ul {
   list-style: none;
   padding: 0;
 }
+
 li {
   margin: 5px 0;
   color: #121212;
@@ -112,18 +171,30 @@ li {
   color: #121212;
 }
 
-/* Buttons */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 .btn-glow {
-  background-color: #121212; /* black button */
+  background-color: #121212;
   color: #fff;
   border-radius: 8px;
   padding: 12px 20px;
   border: none;
   cursor: pointer;
   font-weight: bold;
-  transition: background 0.3s ease;
 }
-.btn-glow:hover {
-  background-color: #333;
+
+.btn-glow:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status.error {
+  color: #a12424;
+  font-weight: 600;
 }
 </style>

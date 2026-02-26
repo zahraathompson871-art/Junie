@@ -44,12 +44,6 @@ router.beforeEach((to, from, next) => {
   } else {
     next()
   }
-
-  if (isAuthenticated && !user.isProfileComplete && to.name !== 'CreateAccount') {
-    return next({ name: 'CreateAccount' })
-  }
-
-  next()
 })
 
 export default router
