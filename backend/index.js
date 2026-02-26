@@ -18,7 +18,13 @@ const app = express();
 app.use(
     cors({
         origin: (origin, callback) => {
-            if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+            const allowed = new Set([
+                (process.env.FRONTEND_URL || "").trim(),
+            ]);
+            const isLocalhost = /^https?:\/\/localhost:\d+$/.test(origin || "");
+            const isLoopback = /^https?:\/\/127\.0\.0\.1:\d+$/.test(origin || "");
+
+            if (!origin || allowed.has(origin) || isLocalhost || isLoopback) {
                 return callback(null, true);
             }
             return callback(new Error("Not allowed by CORS"));
