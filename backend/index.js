@@ -48,6 +48,7 @@ app.get("/api/health/db", async (req, res) => {
 
 app.use("/api/users", userRoutes);
 app.use("/api/templates", templateRoutes);
+app.use("/api/stripe", checkoutRoutes);
 app.use("/api/checkout", checkoutRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/books", bookRoutes);

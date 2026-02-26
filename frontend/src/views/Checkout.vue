@@ -24,12 +24,27 @@
         </li>
       </ul>
       <p class="total">Total: R{{ cart.total }}</p>
+      <p v-if="hasActiveSubscription" class="status success">Your template subscription is active.</p>
 
       <p v-if="paymentError" class="status error">{{ paymentError }}</p>
 
       <div class="actions" v-if="cart.items.length > 0">
-        <button type="button" class="btn-glow" :disabled="startingCheckout" @click="startPayfastCheckout">
-          {{ startingCheckout ? "Redirecting..." : "Pay with PayFast" }}
+        <button type="button" class="btn-glow" :disabled="startingCheckout" @click="startStripeCheckout">
+          {{ startingCheckout ? 'Redirecting...' : 'Pay with Stripe' }}
+        </button>
+      </div>
+      <div class="actions">
+        <button
+          type="button"
+          class="btn-subscribe"
+          :disabled="startingSubscription || hasActiveSubscription"
+          @click="startStripeSubscription"
+        >
+          {{
+            hasActiveSubscription
+              ? 'Subscription Active'
+              : (startingSubscription ? 'Redirecting...' : 'Subscribe Monthly')
+          }}
         </button>
       </div>
     </form>
@@ -37,94 +52,118 @@
 </template>
 
 <script>
-import { reactive } from "vue";
-import { useCartStore } from "../stores/cart";
+import { reactive } from 'vue'
+import { useCartStore } from '../stores/cart'
 
 export default {
-  name: "Checkout",
+  name: 'Checkout',
   setup() {
-    const cart = useCartStore();
-    const customer = reactive({ name: "", email: "", address: "" });
-    return { cart, customer };
+    const cart = useCartStore()
+    const customer = reactive({ name: '', email: '', address: '' })
+    return { cart, customer }
   },
   data() {
     return {
       startingCheckout: false,
-      paymentError: "",
-    };
+      paymentError: '',
+      startingSubscription: false,
+      hasActiveSubscription: false
+    }
   },
   mounted() {
     if (this.$route?.query?.canceled) {
-      this.paymentError = "PayFast checkout was canceled.";
+      this.paymentError = 'Stripe checkout was canceled.'
     }
+    this.loadSubscriptionStatus()
   },
   methods: {
     getApiBaseUrl() {
-      return import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+      return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
     },
     getToken() {
-      return localStorage.getItem("token") || "";
+      return localStorage.getItem('token') || ''
     },
     async parseJson(response) {
       try {
-        return await response.json();
+        return await response.json()
       } catch {
-        return {};
+        return {}
       }
     },
     validateCustomer() {
       if (!this.customer.name || !this.customer.email || !this.customer.address) {
-        throw new Error("Please complete all customer fields before payment.");
+        throw new Error('Please complete all customer fields before payment.')
       }
       if (!this.cart.items.length) {
-        throw new Error("Your cart is empty.");
+        throw new Error('Your cart is empty.')
       }
     },
-    async startPayfastCheckout() {
+    async loadSubscriptionStatus() {
+      const response = await fetch(`${this.getApiBaseUrl()}/api/stripe/subscription-status`, {
+        headers: {
+          Authorization: `Bearer ${this.getToken()}`
+        }
+      })
+      const data = await this.parseJson(response)
+      if (!response.ok) return
+      this.hasActiveSubscription = !!data.hasActiveSubscription
+    },
+    async startStripeCheckout() {
       try {
-        this.validateCustomer();
-        this.paymentError = "";
-        this.startingCheckout = true;
+        this.validateCustomer()
+        this.paymentError = ''
+        this.startingCheckout = true
 
-        const response = await fetch(`${this.getApiBaseUrl()}/api/checkout/create-checkout-session`, {
-          method: "POST",
+        const response = await fetch(`${this.getApiBaseUrl()}/api/stripe/create-checkout-session`, {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${this.getToken()}`,
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.getToken()}`
           },
           body: JSON.stringify({
             cartItems: this.cart.items,
-            customer: this.customer,
-          }),
-        });
+            customer: this.customer
+          })
+        })
 
-        const data = await this.parseJson(response);
-        if (!response.ok || !data.paymentUrl || !data.fields) {
-          throw new Error(data.message || "Failed to start PayFast checkout");
+        const data = await this.parseJson(response)
+        if (!response.ok || !data.url) {
+          throw new Error(data.message || 'Failed to start Stripe checkout')
         }
 
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = data.paymentUrl;
-
-        Object.entries(data.fields).forEach(([key, value]) => {
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = key;
-          input.value = String(value ?? "");
-          form.appendChild(input);
-        });
-
-        document.body.appendChild(form);
-        form.submit();
+        window.location.href = data.url
       } catch (err) {
-        this.paymentError = err.message || "Failed to start PayFast checkout";
+        this.paymentError = err.message || 'Failed to start Stripe checkout'
       } finally {
-        this.startingCheckout = false;
+        this.startingCheckout = false
       }
     },
-  },
-};
+    async startStripeSubscription() {
+      try {
+        this.paymentError = ''
+        this.startingSubscription = true
+
+        const response = await fetch(`${this.getApiBaseUrl()}/api/stripe/create-subscription-session`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.getToken()}`
+          }
+        })
+
+        const data = await this.parseJson(response)
+        if (!response.ok || !data.url) {
+          throw new Error(data.message || 'Failed to start subscription checkout')
+        }
+
+        window.location.href = data.url
+      } catch (err) {
+        this.paymentError = err.message || 'Failed to start subscription checkout'
+      } finally {
+        this.startingSubscription = false
+      }
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -134,7 +173,7 @@ export default {
   padding: 20px;
   border-radius: 12px;
   border: 1px solid #ddd;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   max-width: 600px;
   margin: auto;
 }
@@ -201,6 +240,21 @@ li {
   font-weight: bold;
 }
 
+.btn-subscribe {
+  background-color: #f5f2e8;
+  color: #121212;
+  border-radius: 8px;
+  padding: 12px 20px;
+  border: 1px solid #d4ccba;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.btn-subscribe:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .btn-glow:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -209,5 +263,10 @@ li {
 .status.error {
   color: #a12424;
   font-weight: 600;
+}
+
+.status.success {
+  color: #1f6b2f;
+  font-weight: 700;
 }
 </style>
