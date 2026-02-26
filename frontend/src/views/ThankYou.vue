@@ -27,34 +27,30 @@ export default {
     }
   },
   async mounted() {
-    const sessionId = this.$route?.query?.session_id
+    const paymentId = this.$route?.query?.payment_id
     const token = localStorage.getItem('token') || ''
     const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
-    if (!sessionId) {
+    if (!paymentId) {
       this.loading = false
-      this.error = 'Missing Stripe session id.'
+      this.error = 'Missing PayFast payment id.'
       return
     }
 
     try {
-      const response = await fetch(`${apiBase}/api/stripe/confirm-session`, {
+      const response = await fetch(`${apiBase}/api/checkout/confirm-payfast`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ sessionId })
+        body: JSON.stringify({ paymentId })
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
         throw new Error(data.message || 'Failed to confirm payment.')
       }
-      if (data.mode === 'subscription') {
-        this.successMessage = 'Your subscription is active. You can now apply all templates.'
-      } else {
-        this.successMessage = 'Your payment was successful and templates are unlocked.'
-      }
+      this.successMessage = 'Your payment was successful and templates are unlocked.'
       this.cart.clearCart()
     } catch (err) {
       this.error = err.message || 'Failed to confirm payment.'
