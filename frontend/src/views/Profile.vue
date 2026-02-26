@@ -1,46 +1,60 @@
 <template>
-  <div class="main">
-    <div class="container mt-4" v-if="user">
-      <h2 class="text-glow mb-4">Profile</h2>
-      
-      <!-- Profile Card -->
-      <div class="profile-block text-center mb-4">
-        <img :src="user.avatar || 'https://via.placeholder.com/100'" 
-             class="rounded-circle mb-3 profile-img" alt="Profile">
-        <h5>{{ user.full_name }}</h5>
-        <p>Email: {{ user.email }}</p>
-        <span class="badge bg-purple">Creator</span>
-      </div>
+  <div class="profile-page">
+    <div class="container py-4" v-if="user">
+      <h2 class="page-title mb-4">Profile</h2>
 
-      <!-- Stats -->
-      <div class="row g-4 mb-4">
-        <div class="col-md-4 progress-block">
-          <h6>Products Sold</h6>
-          <div class="progress">
-            <div class="progress-bar bg-purple" style="width:60%">60%</div>
-          </div>
+      <section class="profile-hero mb-4">
+        <div class="avatar-wrap">
+          <img
+            :src="user.avatar || 'https://via.placeholder.com/100'"
+            class="profile-img"
+            alt="Profile"
+          />
         </div>
-        <div class="col-md-4 progress-block">
-          <h6>Challenges Joined</h6>
-          <div class="progress">
-            <div class="progress-bar bg-purple" style="width:40%">40%</div>
-          </div>
+        <div class="profile-meta">
+          <h3>{{ user.full_name }}</h3>
+          <p>{{ user.email }}</p>
+          <span class="status-pill">Active account</span>
         </div>
-        <div class="col-md-4 progress-block">
-          <h6>Followers</h6>
-          <div class="progress">
-            <div class="progress-bar bg-purple" style="width:80%">80%</div>
-          </div>
+        <div class="hero-actions">
+          <button class="btn btn-primary" @click="showEdit = true">Edit Profile</button>
+          <button class="btn btn-secondary" @click="showPassword = true">Change Password</button>
         </div>
-      </div>
+      </section>
 
-      <!-- Settings -->
-      <div class="settings-block p-3">
-        <h6>Settings</h6>
-        <button class="btn btn-glow" @click="showEdit = true">Edit Profile</button>
-        <button class="btn btn-glow" @click="showPassword = true">Change Password</button>
-        <button class="btn btn-glow" @click="logout">Logout</button>
-      </div>
+      <section class="row g-3 mb-4">
+        <div class="col-md-4">
+          <article class="metric-card">
+            <p class="metric-label">Dashboard Blocks</p>
+            <h4>12</h4>
+            <p class="metric-note">Your current workspace setup</p>
+          </article>
+        </div>
+        <div class="col-md-4">
+          <article class="metric-card">
+            <p class="metric-label">Notebook Pages</p>
+            <h4>48</h4>
+            <p class="metric-note">Total saved pages</p>
+          </article>
+        </div>
+        <div class="col-md-4">
+          <article class="metric-card">
+            <p class="metric-label">Focus Streak</p>
+            <h4>9 Days</h4>
+            <p class="metric-note">Recent consistency</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="account-panel">
+        <h5>Account Settings</h5>
+        <p>Manage your profile details and keep your account secure.</p>
+        <div class="settings-actions">
+          <button class="btn btn-primary" @click="showEdit = true">Update Details</button>
+          <button class="btn btn-secondary" @click="showPassword = true">Password</button>
+          <button class="btn btn-danger" @click="logout">Logout</button>
+        </div>
+      </section>
 
       <!-- Edit Profile Modal -->
       <div v-if="showEdit" class="modal-overlay">
@@ -52,7 +66,7 @@
           <!-- Profile Picture Upload -->
           <input type="file" class="form-control mb-3" @change="uploadAvatar">
 
-          <button class="btn btn-glow mb-2" @click="saveProfile">Save</button>
+          <button class="btn btn-primary mb-2" @click="saveProfile">Save</button>
           <button class="btn btn-outline" @click="showEdit = false">Cancel</button>
         </div>
       </div>
@@ -63,7 +77,7 @@
           <h5>Change Password</h5>
           <input type="password" class="form-control mb-2" v-model="newPassword" placeholder="New Password">
           <input type="password" class="form-control mb-3" v-model="confirmPassword" placeholder="Confirm Password">
-          <button class="btn btn-glow mb-2" @click="changePassword">Update</button>
+          <button class="btn btn-primary mb-2" @click="changePassword">Update</button>
           <button class="btn btn-outline" @click="showPassword = false">Cancel</button>
         </div>
       </div>
@@ -156,85 +170,146 @@ export default {
 </script>
 
 <style scoped>
-.main {
-  flex: 1;
-  overflow-y: auto;
-  background-color: #fdfdf6; /* cream background */
-  color: #121212;            /* black text */
+.profile-page {
+  min-height: 100vh;
+  background: var(--dash-bg, #f5faf1);
+  color: var(--dash-title, #253629);
 }
 
-.text-glow {
-  color: #121212;
-  font-weight: 600;
+.page-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
 }
 
-/* Profile, Progress, Settings blocks */
-.profile-block, .progress-block, .settings-block {
-  background-color: #ffffff; /* white cards */
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+.profile-hero,
+.metric-card,
+.account-panel {
+  background: var(--dash-card, var(--n-surface, rgba(255, 255, 255, 0.92)));
+  border: 1px solid var(--dash-border, var(--n-border, #dbe3ff));
+  border-radius: 16px;
+  box-shadow: 0 10px 26px rgba(36, 56, 122, 0.1);
+}
+
+.profile-hero {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
 }
 
 .profile-img {
-  border: 3px solid #121212;
+  border: 3px solid var(--dash-border, #dbe3ff);
   width: 100px;
   height: 100px;
   object-fit: cover;
+  border-radius: 999px;
 }
 
-/* Badge */
-.bg-purple {
-  background-color: #121212; /* black badge */
-  color: #fff;
+.profile-meta h3 {
+  margin: 0 0 6px;
+  font-weight: 700;
 }
 
-/* Progress bars */
-.progress {
-  background-color: #f2f2f2; /* cream progress background */
-  border-radius: 8px;
-  overflow: hidden;
+.profile-meta p {
+  margin: 0 0 10px;
+  color: var(--n-text-muted, #647096);
 }
-.progress-bar {
-  height: 20px;
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
   font-size: 0.8rem;
-  font-weight: 600;
-  background-color: #121212; /* black bar */
-  color: #fff;
+  font-weight: 700;
+  color: #246244;
+  background: #e2f5ea;
+  border: 1px solid #bce6cb;
 }
 
-/* Settings buttons */
-.settings-block {
+.hero-actions {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.metric-card {
+  padding: 18px;
+  height: 100%;
+}
+
+.metric-label {
+  margin: 0 0 8px;
+  color: var(--n-text-muted, #647096);
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.metric-card h4 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.metric-note {
+  margin: 6px 0 0;
+  color: var(--n-text-muted, #647096);
+  font-size: 0.92rem;
+}
+
+.account-panel {
+  padding: 20px;
+}
+
+.account-panel h5 {
+  margin: 0 0 6px;
+}
+
+.account-panel p {
+  margin: 0 0 14px;
+  color: var(--n-text-muted, #647096);
+}
+
+.settings-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .btn {
   padding: 0.75rem 1.2rem;
-  border-radius: 8px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-weight: 700;
   cursor: pointer;
+  border: 1px solid transparent;
 }
-.btn-glow {
-  background-color: #121212; /* black button */
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--dash-accent, #6f8f63), var(--dash-accent-2, #9caf88));
   color: #fff;
-  border: none;
-  transition: background-color 0.3s ease;
+  box-shadow: 0 10px 20px rgba(111, 143, 99, 0.24);
 }
-.btn-glow:hover {
-  background-color: #333;
+
+.btn-secondary {
+  background: #fff;
+  border-color: var(--dash-border, #dbe3ff);
+  color: var(--dash-title, #171d35);
 }
-.btn-outline {
-  border: 1px solid #121212;
-  color: #121212;
-  background: transparent;
+
+.btn-danger {
+  background: #fff1f1;
+  border-color: #f3c7c7;
+  color: #8a2f2f;
 }
-.btn-outline:hover {
-  background-color: #121212;
-  color: #fff;
+
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-danger:hover {
+  transform: translateY(-1px);
 }
 
 /* Modals */
@@ -248,14 +323,37 @@ export default {
   align-items: center;
 }
 .modal-card {
-  background: #ffffff; /* white modal */
-  color: #121212;
+  background: #ffffff;
+  color: var(--dash-title, #171d35);
   padding: 2rem;
   border-radius: 12px;
   width: 100%;
   max-width: 400px;
   text-align: center;
-  border: 1px solid #ddd;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 1px solid var(--dash-border, #dbe3ff);
+  box-shadow: 0 10px 26px rgba(36, 56, 122, 0.16);
+}
+
+.btn-outline {
+  border: 1px solid var(--dash-border, #dbe3ff);
+  color: var(--dash-title, #171d35);
+  background: #fff;
+}
+
+@media (max-width: 768px) {
+  .profile-hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .avatar-wrap {
+    display: flex;
+    justify-content: center;
+  }
+
+  .hero-actions,
+  .settings-actions {
+    justify-content: center;
+  }
 }
 </style>
