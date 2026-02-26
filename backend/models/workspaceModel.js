@@ -16,23 +16,31 @@ export const getWorkspaceByOwnerId = async (ownerId) => {
   return rows;
 };
 
-export const updateWorkspace = async (id, updates) => {
-  const { name, plan } = updates;
-  await db.query(
-    "UPDATE workspaces SET name = ?, plan = ? WHERE id = ?",
-    [name, plan, id]
+export const getWorkspaceById = async (id, ownerId) => {
+  const [rows] = await pool.query(
+    "SELECT * FROM workspaces WHERE id = ? AND owner_id = ?",
+    [id, ownerId]
   );
-    const [rows] = await pool.query(
-      "SELECT * FROM workspaces WHERE id = ?",
-      [id]
-    );
-    return rows[0];
+  return rows[0];
 };
 
-export const deleteWorkspace = async (id) => {
+export const updateWorkspace = async (id, updates, ownerId) => {
+  const { name, plan } = updates;
+  await pool.query(
+    "UPDATE workspaces SET name = ?, plan = ? WHERE id = ? AND owner_id = ?",
+    [name, plan, id, ownerId]
+  );
+  const [rows] = await pool.query(
+    "SELECT * FROM workspaces WHERE id = ? AND owner_id = ?",
+    [id, ownerId]
+  );
+  return rows[0];
+};
+
+export const deleteWorkspace = async (id, ownerId) => {
   const [result] = await pool.query(
-    "DELETE FROM workspaces WHERE id = ?",
-    [id]
+    "DELETE FROM workspaces WHERE id = ? AND owner_id = ?",
+    [id, ownerId]
   );
   return result.affectedRows;
 };

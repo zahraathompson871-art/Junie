@@ -2,8 +2,10 @@ import express from 'express';
 import {pool} from '../config/db.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { saveUserDashboard } from '../models/userModel.js';
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
+let commerceSchemaReady = false;
 
 const builtInTemplates = [
   {
@@ -120,12 +122,90 @@ const safeParseWidgetData = (value) => {
   }
 };
 
+const ensureCommerceSchema = async () => {
+  if (commerceSchemaReady) return;
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS purchases (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      user_id BIGINT UNSIGNED NOT NULL,
+      template_id BIGINT UNSIGNED NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE KEY uniq_user_template (user_id, template_id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      user_id BIGINT UNSIGNED NOT NULL,
+      stripe_customer_id VARCHAR(255) NULL,
+      stripe_subscription_id VARCHAR(255) NOT NULL,
+      plan_code VARCHAR(64) NOT NULL DEFAULT 'templates_monthly',
+      status VARCHAR(40) NOT NULL,
+      current_period_end DATETIME NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE KEY uniq_stripe_subscription (stripe_subscription_id),
+      KEY idx_user_status (user_id, status)
+    )
+  `);
+
+  commerceSchemaReady = true;
+};
+
+const resolveOptionalUserId = (req) => {
+  try {
+    const auth = req.headers.authorization || "";
+    if (!auth.startsWith("Bearer ")) return null;
+    const token = auth.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded?.id || null;
+  } catch {
+    return null;
+  }
+};
+
+const getEntitlements = async (userId) => {
+  await ensureCommerceSchema();
+  if (!userId) {
+    return { hasActiveSubscription: false, purchasedTemplateIds: [] };
+  }
+
+  const [purchases] = await pool.query(
+    "SELECT template_id FROM purchases WHERE user_id = ?",
+    [userId]
+  );
+  const [subs] = await pool.query(
+    `SELECT status
+     FROM subscriptions
+     WHERE user_id = ?
+     ORDER BY updated_at DESC
+     LIMIT 1`,
+    [userId]
+  );
+
+  const hasActiveSubscription = !!subs[0] && ["active", "trialing"].includes(subs[0].status);
+  const purchasedTemplateIds = purchases.map((p) => Number(p.template_id));
+
+  return { hasActiveSubscription, purchasedTemplateIds };
+};
+
 router.get("/", async (req, res) => {
   try {
+    const userId = resolveOptionalUserId(req);
+    const { hasActiveSubscription, purchasedTemplateIds } = await getEntitlements(userId);
+    const purchasedSet = new Set(purchasedTemplateIds);
+
     const builtInMeta = builtInTemplates.map(({ widgets, ...meta }) => ({
       ...meta,
       widgetCount: widgets.length,
-      previewWidgets: widgets.map(w => w.type)
+      previewWidgets: widgets.map(w => w.type),
+      isPurchased: purchasedSet.has(Number(meta.id)),
+      isUnlocked: hasActiveSubscription || purchasedSet.has(Number(meta.id)),
+      unlockType: hasActiveSubscription ? "subscription" : (purchasedSet.has(Number(meta.id)) ? "purchase" : null),
     }));
 
     let dbMeta = [];
@@ -152,7 +232,10 @@ router.get("/", async (req, res) => {
               colors: ["#f2f8fb", "#a7c7e7", "#6ba8a9"]
             },
             widgetCount: widgets.length,
-            previewWidgets: widgets.map(w => w.widget_type)
+            previewWidgets: widgets.map(w => w.widget_type),
+            isPurchased: purchasedSet.has(Number(id)),
+            isUnlocked: hasActiveSubscription || purchasedSet.has(Number(id)),
+            unlockType: hasActiveSubscription ? "subscription" : (purchasedSet.has(Number(id)) ? "purchase" : null),
           };
         })
       );
@@ -172,6 +255,11 @@ router.post("/:id/apply", protect, async (req, res) => {
   try {
     const userId = req.user.id;
     const templateId = Number(req.params.id);
+    const { hasActiveSubscription, purchasedTemplateIds } = await getEntitlements(userId);
+
+    if (!hasActiveSubscription && !purchasedTemplateIds.includes(templateId)) {
+      return res.status(403).json({ message: "Please purchase this template or subscribe before applying it." });
+    }
 
     const builtIn = builtInTemplates.find(t => t.id === templateId);
     if (builtIn) {
@@ -214,6 +302,17 @@ router.post("/:id/apply", protect, async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Failed to apply template" });
+  }
+});
+
+router.get("/entitlements", protect, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const entitlements = await getEntitlements(userId);
+    return res.json(entitlements);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Failed to load entitlements" });
   }
 });
 

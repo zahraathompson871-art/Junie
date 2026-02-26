@@ -12,6 +12,7 @@ import CreateAccount from './views/CreateAccount.vue'
 import Cart from './views/Cart.vue'
 import Checkout from './views/Checkout.vue'
 import ThankYou from './views/ThankYou.vue'
+import Notebooks from './views/Notebooks.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -24,7 +25,8 @@ const routes = [
   { path: '/profile', name: 'Profile', component: Profile },
   { path: '/cart', name: 'Cart', component: Cart },
   { path: '/checkout', name: 'Checkout', component: Checkout },
-  { path: '/thankyou', name: 'ThankYou', component: ThankYou }
+  { path: '/thankyou', name: 'ThankYou', component: ThankYou },
+  { path: '/notebooks', name: 'Notebooks', component: Notebooks }
 ]
 
 const router = createRouter({
@@ -36,7 +38,7 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token') // stored when login/signup succeeds
 
   const protectedRoutes = [
-    'Dashboard', 'Marketplace', 'CreatorHub', 'Profile', 'Cart', 'Checkout', 'ThankYou'
+    'Dashboard', 'Marketplace', 'CreatorHub', 'Profile', 'Cart', 'Checkout', 'ThankYou', 'Notebooks'
   ]
 
   if (protectedRoutes.includes(to.name) && !token) {
