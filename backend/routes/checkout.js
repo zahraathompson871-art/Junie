@@ -1,96 +1,129 @@
 import express from "express";
+import Stripe from "stripe";
 import { pool } from "../config/db.js";
 import { protect } from "../middleware/authMiddleware.js";
-import { getPaypalClient, paypal } from "../config/configPaypal.js";
 
 const router = express.Router();
 
-router.post("/create-order", protect, async (req, res) => {
-  try {
-    const { cartItems = [], totalAmount } = req.body;
-    const currencyCode = (process.env.PAYPAL_CURRENCY || "USD").toUpperCase();
+const stripeSecretKey = (process.env.STRIPE_SECRET_KEY || "").trim();
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
-    const computedTotal = Array.isArray(cartItems)
-      ? cartItems.reduce((sum, item) => sum + Number(item?.price || 0), 0)
-      : 0;
+const pendingStripeSessions = new Map();
+const finalizedSessions = new Set();
 
-    const amountValue = Number(totalAmount ?? computedTotal);
+const ensureStripeConfigured = (res) => {
+  if (!stripe || stripeSecretKey.toLowerCase().includes("replace_with_")) {
+    res.status(500).json({ message: "Stripe is not configured. Set a real STRIPE_SECRET_KEY." });
+    return false;
+  }
+  return true;
+};
 
-    if (!amountValue || amountValue <= 0) {
-      return res.status(400).json({ message: "Cart total must be greater than zero" });
+const toMinorAmount = (amount) => Math.round(Number(amount) * 100);
+
+const applyTemplatePurchases = async ({ userId, cartItems }) => {
+  for (const item of cartItems) {
+    const templateId = item.id;
+
+    const [existingPurchase] = await pool.query(
+      "SELECT id FROM purchases WHERE user_id = ? AND template_id = ? LIMIT 1",
+      [userId, templateId]
+    );
+    if (existingPurchase.length > 0) continue;
+
+    const [widgets] = await pool.query(
+      "SELECT * FROM template_widgets WHERE template_id = ? ORDER BY position",
+      [templateId]
+    );
+
+    for (const widget of widgets) {
+      await pool.query(
+        "INSERT INTO dashboard_widgets (user_id, widget_type, widget_data, position) VALUES (?, ?, ?, ?)",
+        [userId, widget.widget_type, widget.widget_data, widget.position]
+      );
     }
 
-    const request = new paypal.orders.OrdersCreateRequest();
-    request.prefer("return=representation");
-    request.requestBody({
-      intent: "CAPTURE",
-      purchase_units: [
-        {
-          amount: {
-            currency_code: currencyCode,
-            value: amountValue.toFixed(2),
-          },
+    await pool.query("INSERT INTO purchases (user_id, template_id) VALUES (?, ?)", [userId, templateId]);
+  }
+};
+
+router.post("/create-checkout-session", protect, async (req, res) => {
+  try {
+    if (!ensureStripeConfigured(res)) return;
+
+    const { cartItems = [] } = req.body;
+    const userId = req.user.id;
+    const currency = (process.env.STRIPE_CURRENCY || "zar").trim().toLowerCase();
+    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
+
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      return res.status(400).json({ message: "Cart items are required" });
+    }
+
+    const lineItems = cartItems.map((item) => ({
+      price_data: {
+        currency,
+        product_data: {
+          name: item.title || `Template ${item.id}`,
         },
-      ],
+        unit_amount: toMinorAmount(item.price),
+      },
+      quantity: 1,
+    }));
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: lineItems,
+      success_url: `${frontendUrl}/#/thankyou?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/#/checkout?canceled=1`,
+      metadata: {
+        userId: String(userId),
+      },
     });
 
-    const order = await getPaypalClient().execute(request);
-    return res.json({ id: order.result.id });
-  } catch (err) {
-    console.error("PayPal create-order error:", err);
-    return res.status(500).json({
-      message: "Failed to create PayPal order",
-      error: process.env.NODE_ENV === "production" ? undefined : String(err?.message || err),
+    pendingStripeSessions.set(checkoutSession.id, {
+      userId,
+      cartItems,
     });
+
+    return res.json({ url: checkoutSession.url, sessionId: checkoutSession.id });
+  } catch (err) {
+    console.error("Stripe create-checkout-session error:", err);
+    return res.status(500).json({ message: "Failed to create Stripe checkout session" });
   }
 });
 
-router.post("/capture-order", protect, async (req, res) => {
+router.post("/confirm-session", protect, async (req, res) => {
   try {
-    const { orderID, cartItems = [] } = req.body;
+    if (!ensureStripeConfigured(res)) return;
+
+    const { sessionId } = req.body;
     const userId = req.user.id;
 
-    if (!orderID) {
-      return res.status(400).json({ message: "orderID is required" });
+    if (!sessionId) return res.status(400).json({ message: "sessionId is required" });
+    if (finalizedSessions.has(sessionId)) {
+      return res.json({ message: "Session already confirmed", alreadyConfirmed: true });
     }
 
-    const request = new paypal.orders.OrdersCaptureRequest(orderID);
-    request.requestBody({});
-
-    const capture = await getPaypalClient().execute(request);
-
-    if (capture.result.status !== "COMPLETED") {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!session || session.payment_status !== "paid") {
       return res.status(400).json({ message: "Payment not completed" });
     }
 
-    for (const item of cartItems) {
-      const templateId = item.id;
-
-      const [widgets] = await pool.query(
-        "SELECT * FROM template_widgets WHERE template_id = ? ORDER BY position",
-        [templateId]
-      );
-
-      for (const widget of widgets) {
-        await pool.query(
-          "INSERT INTO dashboard_widgets (user_id, widget_type, widget_data, position) VALUES (?, ?, ?, ?)",
-          [userId, widget.widget_type, widget.widget_data, widget.position]
-        );
-      }
-
-      await pool.query(
-        "INSERT INTO purchases (user_id, template_id) VALUES (?, ?)",
-        [userId, templateId]
-      );
+    const pending = pendingStripeSessions.get(sessionId);
+    if (!pending || pending.userId !== userId) {
+      return res.status(404).json({ message: "Checkout session not found for this user" });
     }
 
-    return res.json({ message: "Purchase successful and template applied" });
+    await applyTemplatePurchases({ userId, cartItems: pending.cartItems });
+
+    finalizedSessions.add(sessionId);
+    pendingStripeSessions.delete(sessionId);
+
+    return res.json({ message: "Payment confirmed and purchase applied" });
   } catch (err) {
-    console.error("PayPal capture-order error:", err);
-    return res.status(500).json({
-      message: "Failed to capture PayPal order",
-      error: process.env.NODE_ENV === "production" ? undefined : String(err?.message || err),
-    });
+    console.error("Stripe confirm-session error:", err);
+    return res.status(500).json({ message: "Failed to confirm Stripe session" });
   }
 });
 
