@@ -4,7 +4,7 @@
       <h2 class="text-glow mb-4">Thank You!</h2>
       <p v-if="error" class="status error">{{ error }}</p>
       <p v-else-if="loading">Confirming your payment...</p>
-      <p v-else>Your payment was successful.</p>
+      <p v-else>{{ successMessage }}</p>
 
       <router-link to="/dashboard" class="btn btn-glow">Go to Dashboard</router-link>
     </div>
@@ -22,7 +22,8 @@ export default {
   data() {
     return {
       loading: true,
-      error: ''
+      error: '',
+      successMessage: 'Your payment was successful.'
     }
   },
   async mounted() {
@@ -48,6 +49,11 @@ export default {
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
         throw new Error(data.message || 'Failed to confirm payment.')
+      }
+      if (data.mode === 'subscription') {
+        this.successMessage = 'Your subscription is active. You can now apply all templates.'
+      } else {
+        this.successMessage = 'Your payment was successful and templates are unlocked.'
       }
       this.cart.clearCart()
     } catch (err) {

@@ -2,7 +2,20 @@
   <div class="main">
     <div class="container mt-4">
       <h2 class="text-glow mb-4">Dashboard Templates</h2>
-      <p class="text-muted mb-4">Pick a template and apply it directly to your dashboard.</p>
+      <p class="text-muted mb-2">Buy templates once, or subscribe to unlock all templates.</p>
+      <div class="market-actions mb-4">
+        <button
+          class="btn btn-glow"
+          :disabled="subscribing || hasActiveSubscription"
+          @click="startSubscriptionCheckout"
+        >
+          {{
+            hasActiveSubscription
+              ? 'Subscription Active'
+              : (subscribing ? 'Redirecting...' : 'Subscribe Monthly')
+          }}
+        </button>
+      </div>
 
       <p v-if="error" class="text-danger">{{ error }}</p>
       <p v-if="success" class="text-success">{{ success }}</p>
@@ -36,12 +49,23 @@
                 Preview
               </button>
               <button
+                v-if="isTemplateUnlocked(template)"
                 class="btn btn-glow mt-2 w-100"
                 :disabled="applyingId === template.id"
                 @click="applyTemplate(template.id)"
               >
                 {{ applyingId === template.id ? 'Applying...' : 'Apply to Dashboard' }}
               </button>
+              <button
+                v-else
+                class="btn btn-glow mt-2 w-100"
+                @click="addToCart(template)"
+              >
+                Add to Cart
+              </button>
+              <p v-if="isTemplateUnlocked(template)" class="unlock-tag">
+                {{ hasActiveSubscription ? 'Unlocked by subscription' : 'Purchased template' }}
+              </p>
             </div>
           </div>
         </div>
@@ -121,6 +145,8 @@
 </template>
 
 <script>
+import { useCartStore } from '../stores/cart'
+
 export default {
   data() {
     return {
@@ -129,8 +155,15 @@ export default {
       error: '',
       success: '',
       previewOpen: false,
-      previewTemplate: null
+      previewTemplate: null,
+      hasActiveSubscription: false,
+      purchasedTemplateIds: [],
+      subscribing: false
     }
+  },
+  setup() {
+    const cart = useCartStore()
+    return { cart }
   },
   computed: {
     previewWidgetCards() {
@@ -143,6 +176,7 @@ export default {
   },
   async mounted() {
     await this.loadTemplates()
+    await this.loadEntitlements()
   },
   methods: {
     getApiBaseUrl() {
@@ -171,6 +205,62 @@ export default {
         return
       }
       this.templates = Array.isArray(data) ? data : []
+    },
+    async loadEntitlements() {
+      const token = this.getToken()
+      if (!token) return
+
+      const response = await fetch(`${this.getApiBaseUrl()}/api/templates/entitlements`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      const data = await this.parseJson(response)
+      if (!response.ok) return
+
+      this.hasActiveSubscription = !!data.hasActiveSubscription
+      this.purchasedTemplateIds = Array.isArray(data.purchasedTemplateIds) ? data.purchasedTemplateIds : []
+    },
+    isTemplateUnlocked(template) {
+      if (!template) return false
+      return this.hasActiveSubscription || this.purchasedTemplateIds.includes(Number(template.id))
+    },
+    addToCart(template) {
+      if (!this.cart.items.some(item => Number(item.id) === Number(template.id))) {
+        this.cart.addItem({
+          id: Number(template.id),
+          title: template.title,
+          price: Number(template.price || 59),
+          image: template.image
+        })
+      }
+      this.$router.push('/cart')
+    },
+    async startSubscriptionCheckout() {
+      try {
+        this.error = ''
+        this.success = ''
+        this.subscribing = true
+        const token = this.getToken()
+        if (!token) throw new Error('Please log in before subscribing')
+
+        const response = await fetch(`${this.getApiBaseUrl()}/api/stripe/create-subscription-session`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+
+        const data = await this.parseJson(response)
+        if (!response.ok || !data.url) {
+          throw new Error(data.message || 'Failed to start subscription checkout')
+        }
+        window.location.href = data.url
+      } catch (err) {
+        this.error = err.message || 'Failed to start subscription checkout'
+      } finally {
+        this.subscribing = false
+      }
     },
     openPreview(template) {
       this.previewTemplate = template
@@ -256,6 +346,11 @@ export default {
   color: #37352f;
 }
 
+.market-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .product-card {
   background: #fff;
   border: 1px solid #e6e3dd;
@@ -296,6 +391,14 @@ export default {
 .widget-count {
   font-size: 12px;
   color: #8a867e;
+}
+
+.unlock-tag {
+  margin-top: 8px;
+  margin-bottom: 0;
+  font-size: 12px;
+  color: #53627d;
+  font-weight: 600;
 }
 
 .theme-meta {
