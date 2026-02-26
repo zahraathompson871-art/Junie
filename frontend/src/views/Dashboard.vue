@@ -1,19 +1,52 @@
 <template>
   <div class="main" :class="`theme-${currentThemeKey}`" :style="themeStyle">
     <div class="container mt-4">
+
+      <!-- HEADER -->
       <div class="header-section mb-4">
-        <img
-          :src="themeHeaderImage"
-          alt="Header Image"
-          class="header-image"
+        <div class="header-image-wrapper">
+          <img
+            v-if="headerImage"
+            :src="headerImage"
+            alt="Header Image"
+            class="header-image"
+          />
+          <div v-else class="header-placeholder">
+            No image uploaded
+          </div>
+
+          <!-- REMOVE IMAGE BUTTON -->
+          <button 
+            v-if="headerImage" 
+            @click="removeHeaderImage" 
+            class="remove-image-btn-overlay"
+          >
+            ×
+          </button>
+        </div>
+
+        <!-- VISIBLE CHOOSE IMAGE BUTTON -->
+        <button class="choose-image-btn" @click="$refs.fileInput.click()">
+          Choose Image
+        </button>
+
+        <!-- Hidden file input -->
+        <input 
+          type="file" 
+          accept="image/*" 
+          @change="onImageUpload" 
+          ref="fileInput" 
+          style="display: none;" 
         />
+
         <h2 class="dashboard-title">My Dashboard</h2>
       </div>
 
+      <!-- ADD WIDGET TOOLBAR -->
       <div class="toolbar mb-4">
         <div class="add-widget">
           <button @click="toggleMenu" class="add-btn">+ Add Block</button>
-          <div v-if="showMenu" class="add-menu">
+          <div v-if="showMenu" class="add-menu" @click.stop>
             <div class="menu-label">Academic Core</div>
             <div @click="addWidget('assignment_tracker')">Assignment Tracker</div>
             <div @click="addWidget('study_session_log')">Study Session Log</div>
@@ -30,8 +63,10 @@
         </div>
       </div>
 
+      <!-- ERROR MESSAGE -->
       <p v-if="error" class="text-danger">{{ error }}</p>
 
+      <!-- WIDGET GRID -->
       <draggable v-model="widgets" item-key="id" class="widgets-grid" ghost-class="ghost">
         <template #item="{ element, index }">
           <div
@@ -51,6 +86,7 @@
           </div>
         </template>
       </draggable>
+
     </div>
   </div>
 </template>
@@ -90,36 +126,12 @@ export default {
       showMenu: false,
       resizing: null,
       currentThemeKey: 'matcha',
-      themeHeaderImage: 'https://i.pinimg.com/1200x/61/29/b9/6129b9783e7a0973c03ffa37d9bc5f17.jpg'
+      headerImage: null
     }
   },
   computed: {
     themeStyle() {
       const themes = {
-        ocean: {
-          '--dash-bg': '#edf7fc',
-          '--dash-card': 'rgba(255,255,255,0.92)',
-          '--dash-border': '#cde4f3',
-          '--dash-title': '#234154',
-          '--dash-accent': '#6ba8a9',
-          '--dash-accent-2': '#8fbfda'
-        },
-        flower: {
-          '--dash-bg': '#fff4f8',
-          '--dash-card': 'rgba(255,255,255,0.92)',
-          '--dash-border': '#f0cddd',
-          '--dash-title': '#6d3f61',
-          '--dash-accent': '#c38eb4',
-          '--dash-accent-2': '#f1b4c5'
-        },
-        dark_academia: {
-          '--dash-bg': '#181920',
-          '--dash-card': 'rgba(33,36,46,0.95)',
-          '--dash-border': '#353a4c',
-          '--dash-title': '#f2f4ff',
-          '--dash-accent': '#8d98d9',
-          '--dash-accent-2': '#a29bfe'
-        },
         matcha: {
           '--dash-bg': '#f5faf1',
           '--dash-card': 'rgba(255,255,255,0.92)',
@@ -127,57 +139,57 @@ export default {
           '--dash-title': '#253629',
           '--dash-accent': '#6f8f63',
           '--dash-accent-2': '#9caf88'
-        },
-        coffee: {
-          '--dash-bg': '#f7efe6',
-          '--dash-card': 'rgba(255,255,255,0.9)',
-          '--dash-border': '#e5d4c3',
-          '--dash-title': '#4d362a',
-          '--dash-accent': '#9a715e',
-          '--dash-accent-2': '#c89f82'
         }
       }
       return themes[this.currentThemeKey] || themes.matcha
     }
   },
-  async mounted() {
+  mounted() {
     this.loadThemeFromStorage()
-    await this.loadDashboard()
-  },
-  beforeUnmount() {
-    if (this.saveTimer) clearTimeout(this.saveTimer)
-    this.stopResize()
-  },
-  watch: {
-    widgets: {
-      handler() {
-        if (!this.loaded) return
-        this.queueSave()
-      },
-      deep: true
-    }
   },
   methods: {
-    getApiBaseUrl() {
-      return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
-    },
     loadThemeFromStorage() {
-      this.currentThemeKey = localStorage.getItem('dashboardThemeKey') || 'matcha'
-      this.themeHeaderImage = localStorage.getItem('dashboardThemeImage') || this.themeHeaderImage
+      this.currentThemeKey = localStorage.getItem('dashboardThemeKey') || 'matcha';
+      const savedImage = localStorage.getItem('dashboardHeaderImage');
+      if (savedImage) this.headerImage = savedImage;
     },
-    defaultWidgets() {
-      return [
-        { id: Date.now() + 1, type: 'assignment_tracker', data: [], size: 6, rows: 2 },
-        { id: Date.now() + 2, type: 'study_session_log', data: [], size: 6, rows: 2 },
-        { id: Date.now() + 3, type: 'pomodoro', data: {}, size: 4, rows: 1 },
-        { id: Date.now() + 4, type: 'todo', data: [{ text: 'Finish AI assignment', done: false }], size: 4, rows: 1 },
-        { id: Date.now() + 5, type: 'goal', data: { current: 3, total: 10, target: 'Complete 10 study sessions' }, size: 4, rows: 1 },
-        { id: Date.now() + 6, type: 'calendar', data: { currentMonth: new Date().getMonth(), currentYear: new Date().getFullYear() }, size: 4, rows: 1 },
-        { id: Date.now() + 7, type: 'mood_tracker', data: [], size: 4, rows: 1 },
-        { id: Date.now() + 8, type: 'quick_notes', data: [], size: 6, rows: 2 },
-        { id: Date.now() + 9, type: 'picture', data: { src: '' }, size: 6, rows: 2 }
-      ]
+    onImageUpload(event) {
+      const file = event.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = e => {
+        this.headerImage = e.target.result
+        localStorage.setItem('dashboardHeaderImage', this.headerImage)
+      }
+      reader.readAsDataURL(file)
     },
+    removeHeaderImage() {
+      this.headerImage = null
+      localStorage.removeItem('dashboardHeaderImage')
+    },
+    toggleMenu() { this.showMenu = !this.showMenu },
+    addWidget(type) { 
+      const defaults = {
+        todo: [],
+        goal: { current: 0, total: 10, target: 'New Goal' },
+        pomodoro: {},
+        calendar: { currentMonth: new Date().getMonth(), currentYear: new Date().getFullYear() },
+        picture: { src: '' },
+        assignment_tracker: [],
+        study_session_log: [],
+        mood_tracker: [],
+        quick_notes: []
+      }
+      this.widgets.push({
+        id: Date.now(),
+        type,
+        data: defaults[type],
+        size: ['assignment_tracker','study_session_log','quick_notes','picture'].includes(type) ? 6 : 4,
+        rows: ['assignment_tracker','study_session_log','quick_notes','picture'].includes(type) ? 2 : 1
+      })
+      this.showMenu = false
+    },
+    removeWidget(index) { this.widgets.splice(index, 1) },
     resolveWidget(type) {
       const map = {
         todo: ToDoWidget,
@@ -192,325 +204,121 @@ export default {
       }
       return map[type] || null
     },
-    addWidget(type) {
-      const defaults = {
-        todo: [],
-        goal: { current: 0, total: 10, target: 'New Goal' },
-        pomodoro: {},
-        calendar: {},
-        picture: { src: '' },
-        assignment_tracker: [],
-        study_session_log: [],
-        mood_tracker: [],
-        quick_notes: []
-      }
-      const calendarDefault = { currentMonth: new Date().getMonth(), currentYear: new Date().getFullYear() }
-      this.widgets.push({
-        id: Date.now(),
-        type,
-        data: type === 'calendar' ? calendarDefault : defaults[type],
-        size: ['assignment_tracker', 'study_session_log', 'quick_notes', 'picture'].includes(type) ? 6 : 4,
-        rows: ['assignment_tracker', 'study_session_log', 'quick_notes', 'picture'].includes(type) ? 2 : 1
-      })
-      this.showMenu = false
-    },
-    removeWidget(index) {
-      this.widgets.splice(index, 1)
-    },
-    widgetSpan(widget) {
-      const span = Number(widget?.size)
-      if (Number.isFinite(span)) return Math.min(12, Math.max(3, span))
-      return 4
-    },
-    widgetRows(widget) {
-      const rows = Number(widget?.rows)
-      return Number.isFinite(rows) ? Math.min(4, Math.max(1, rows)) : 1
-    },
-    startResizeX(index, event) {
-      event.preventDefault()
-      const currentSpan = this.widgetSpan(this.widgets[index])
-      this.resizing = { axis: 'x', index, startX: event.clientX, startSpan: currentSpan }
-      window.addEventListener('mousemove', this.onResizeMove)
-      window.addEventListener('mouseup', this.stopResize)
-    },
-    startResizeY(index, event) {
-      event.preventDefault()
-      const currentRows = this.widgetRows(this.widgets[index])
-      this.resizing = { axis: 'y', index, startY: event.clientY, startRows: currentRows }
-      window.addEventListener('mousemove', this.onResizeMove)
-      window.addEventListener('mouseup', this.stopResize)
-    },
-    onResizeMove(event) {
-      if (!this.resizing) return
-      if (!this.widgets[this.resizing.index]) return
-
-      if (this.resizing.axis === 'x') {
-        const dx = event.clientX - this.resizing.startX
-        const deltaSpan = Math.round(dx / 48)
-        const next = Math.min(12, Math.max(3, this.resizing.startSpan - deltaSpan))
-        this.widgets[this.resizing.index].size = next
-      } else {
-        const dy = event.clientY - this.resizing.startY
-        const deltaRows = Math.round(dy / 90)
-        const nextRows = Math.min(4, Math.max(1, this.resizing.startRows + deltaRows))
-        this.widgets[this.resizing.index].rows = nextRows
-      }
-    },
-    stopResize() {
-      if (!this.resizing) return
-      this.resizing = null
-      window.removeEventListener('mousemove', this.onResizeMove)
-      window.removeEventListener('mouseup', this.stopResize)
-    },
-    updateWidgetData(index, data) {
-      if (!this.widgets[index]) return
-      this.widgets[index].data = data
-    },
-    async loadDashboard() {
-      this.authToken = localStorage.getItem('token') || ''
-      if (!this.authToken) {
-        this.widgets = this.defaultWidgets()
-        this.loaded = true
-        return
-      }
-
-      try {
-        const response = await fetch(`${this.getApiBaseUrl()}/api/users/dashboard`, {
-          headers: { Authorization: `Bearer ${this.authToken}` }
-        })
-        if (!response.ok) throw new Error('Failed to load dashboard')
-        const data = await response.json()
-        this.widgets = Array.isArray(data) && data.length
-          ? data.map(w => ({ ...w, size: this.widgetSpan(w), rows: this.widgetRows(w) }))
-          : this.defaultWidgets()
-        this.loaded = true
-        if (!Array.isArray(data) || !data.length) await this.saveDashboard()
-      } catch (err) {
-        this.error = 'Failed to load dashboard data'
-        this.widgets = this.defaultWidgets()
-        this.loaded = true
-      }
-    },
-    queueSave() {
-      if (!this.authToken) return
-      if (this.saveTimer) clearTimeout(this.saveTimer)
-      this.saveTimer = setTimeout(() => {
-        this.saveDashboard()
-      }, 250)
-    },
-    async saveDashboard() {
-      if (!this.authToken) return
-      try {
-        await fetch(`${this.getApiBaseUrl()}/api/users/dashboard`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.authToken}`
-          },
-          body: JSON.stringify({ dashboard: this.widgets })
-        })
-      } catch {
-        this.error = 'Failed to save dashboard changes'
-      }
-    },
-    toggleMenu() {
-      this.showMenu = !this.showMenu
-    }
+    widgetSpan(widget) { const span = Number(widget?.size); return Number.isFinite(span) ? Math.min(12, Math.max(3, span)) : 4 },
+    widgetRows(widget) { const rows = Number(widget?.rows); return Number.isFinite(rows) ? Math.min(4, Math.max(1, rows)) : 1 },
   }
 }
 </script>
 
 <style scoped>
 .main {
-  background: var(--dash-bg, #f5faf1);
+  background:
+    radial-gradient(circle at 15% 10%, color-mix(in srgb, var(--dash-accent) 12%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 85% 90%, color-mix(in srgb, var(--dash-accent-2) 10%, transparent) 0%, transparent 50%),
+    var(--dash-bg, #f5faf1);
   min-height: 100vh;
-  transition: background 0.25s ease;
+  padding-bottom: 50px;
+  transition: background 0.3s ease;
+  overflow-x: hidden;
 }
 
-.header-section {
-  text-align: center;
+.header-section { text-align:center; margin-bottom:2.5rem; }
+.header-image-wrapper {
+  position: relative;
+  width: 100%;
+  max-height: 300px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 0.8rem;
 }
-
 .header-image {
   width: 100%;
-  max-height: 250px;
-  object-fit: cover;
-  border-radius: 20px;
-  margin-bottom: 1rem;
-  box-shadow: 0 14px 34px rgba(48, 66, 130, 0.2);
+  height: auto;
+  max-height: 300px;
+  object-fit: contain;
 }
-
-.dashboard-title {
-  font-weight: 800;
-  color: var(--dash-title, #1c2446);
-  font-size: 30px;
-  letter-spacing: -0.03em;
-  margin-top: 12px;
-  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
-}
-
-.widget-shell {
-  position: relative;
-  background: var(--dash-card, rgba(255, 255, 255, 0.9));
+.header-placeholder {
+  width: 100%;
+  height: 180px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(200,200,200,0.15);
   border-radius: 16px;
-  padding: 18px;
-  height: 100%;
-  transition: all 0.2s ease;
-  border: 1px solid var(--dash-border, #d9e3ff);
-  box-shadow: 0 10px 25px rgba(36, 56, 122, 0.08);
-  backdrop-filter: blur(10px);
+  font-weight:600;
+  color:#555;
+  font-size:14px;
 }
 
-.widget-shell:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 30px rgba(36, 56, 122, 0.15);
-}
-
-.remove-btn {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  background: color-mix(in srgb, var(--dash-accent, #6f8f63) 14%, #ffffff);
-  color: var(--dash-accent, #4c5f97);
-  font-weight: bold;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--dash-accent, #6f8f63) 36%, #ffffff);
-  width: 22px;
-  height: 22px;
-  font-size: 12px;
-}
-
-.remove-btn:hover {
-  background: color-mix(in srgb, var(--dash-accent, #6f8f63) 22%, #ffffff);
-}
-
-.ghost {
-  opacity: 0.5;
-}
-
-.widgets-grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-auto-rows: minmax(140px, auto);
-  gap: 14px;
-}
-
-.widget-item {
-  min-width: 0;
-  grid-column: span 4;
-}
-
-@media (max-width: 992px) {
-  .widget-item {
-    grid-column: span 6;
-  }
-}
-
-@media (max-width: 640px) {
-  .widget-item {
-    grid-column: span 12;
-  }
-}
-
-.add-btn {
-  background: linear-gradient(135deg, var(--dash-accent, #4a6cff), var(--dash-accent-2, #6d86ff));
+.choose-image-btn {
+  background: linear-gradient(135deg,var(--dash-accent),var(--dash-accent-2));
   border: none;
   font-weight: 700;
   border-radius: 12px;
-  padding: 8px 14px;
-  transition: 0.2s ease;
+  padding: 8px 16px;
   color: #fff;
-  box-shadow: 0 10px 20px rgba(74, 108, 255, 0.28);
-}
-
-.add-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.03);
-}
-
-.add-menu {
-  margin-top: 8px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 14px;
-  padding: 8px;
-  border: 1px solid var(--dash-border, #d9e3ff);
-  box-shadow: 0 12px 26px rgba(36, 56, 122, 0.14);
-  width: 220px;
-}
-
-.add-menu div {
-  padding: 8px;
-  border-radius: 6px;
   cursor: pointer;
+  margin-bottom: 12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+.choose-image-btn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.05);
 }
 
-.menu-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--dash-accent, #4a6cff) 55%, #6a769d);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.add-menu div:hover {
-  background: color-mix(in srgb, var(--dash-accent, #4a6cff) 12%, #ffffff);
-}
-
-.resize-handle-left {
+.remove-image-btn-overlay {
   position: absolute;
-  left: -6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 10px;
-  height: 48px;
-  border-left: 2px solid var(--dash-accent, #6c82d6);
-  opacity: 0;
-  cursor: ew-resize;
-  transition: opacity 0.15s ease;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 75, 75, 0.9);
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 2px 6px rgba(0,0,0,0.2);
+}
+.remove-image-btn-overlay:hover {
+  background: rgba(255,75,75,1);
+  transform: scale(1.15);
 }
 
-.resize-handle-bottom {
-  position: absolute;
-  left: 50%;
-  bottom: -6px;
-  transform: translateX(-50%);
-  width: 48px;
-  height: 10px;
-  border-bottom: 2px solid var(--dash-accent, #6c82d6);
-  opacity: 0;
-  cursor: ns-resize;
-  transition: opacity 0.15s ease;
+.dashboard-title {
+  font-weight:900;
+  font-size:40px;
+  letter-spacing:-0.04em;
+  margin-top:8px;
+  background:linear-gradient(135deg,var(--dash-title),var(--dash-accent));
+  background-clip:text;
+  -webkit-background-clip:text;
+  color:transparent;
+  -webkit-text-fill-color:transparent;
 }
 
-.widget-shell:hover .resize-handle-left,
-.widget-shell:hover .resize-handle-bottom {
-  opacity: 0.8;
-}
-
-:deep(.widget-card),
-:deep(.calendar-widget),
-:deep(.picture-widget) {
-  box-shadow: none !important;
-  border: 1px solid var(--dash-border, #d9e3ff) !important;
-  border-radius: 12px !important;
-  background: var(--dash-card, rgba(255, 255, 255, 0.95)) !important;
-}
-
-:deep(.calendar-widget::before) {
-  background: rgba(255, 255, 255, 0.92) !important;
-}
-
-:deep(.progress-bar),
-:deep(.add-btn),
-:deep(.start),
-:deep(.pause),
-:deep(.reset) {
-  background: linear-gradient(135deg, var(--dash-accent, #4a6cff), var(--dash-accent-2, #6d86ff)) !important;
-}
-
-:deep(.percentage),
-:deep(.counter),
-:deep(.status.running) {
-  color: var(--dash-title, #1f2c55) !important;
-}
+.widgets-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); grid-auto-rows:minmax(160px,auto); gap:22px; }
+.widget-item { min-width:0; animation:fadeUp 0.4s ease forwards; }
+.widget-shell { position:relative; background:var(--dash-card,rgba(255,255,255,0.95)); border-radius:24px; padding:22px; height:100%; transition:all 0.25s cubic-bezier(.4,0,.2,1); border:1px solid var(--dash-border,#e2e8f0); box-shadow:0 12px 30px rgba(0,0,0,0.06),0 6px 16px rgba(0,0,0,0.04); backdrop-filter:blur(14px);}
+.widget-shell:hover { transform:translateY(-6px) scale(1.015); box-shadow:0 20px 45px rgba(0,0,0,0.12),0 8px 20px rgba(0,0,0,0.06);}
+.remove-btn { position:absolute; top:14px; right:14px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:none; background: color-mix(in srgb, var(--dash-accent) 15%, white); color: var(--dash-accent); font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.08); transition: all 0.2s ease; z-index:5; }
+.remove-btn:hover { background: var(--dash-accent); color:white; transform:scale(1.1);}
+.add-btn { background:linear-gradient(135deg,var(--dash-accent),var(--dash-accent-2)); border:none; font-weight:800; border-radius:16px; padding:10px 18px; color:#fff; box-shadow:0 10px 22px rgba(0,0,0,0.15),0 6px 14px color-mix(in srgb,var(--dash-accent) 40%,transparent); transition:all 0.25s ease; cursor:pointer;}
+.add-btn:hover { transform:translateY(-3px) scale(1.04); filter:brightness(1.05);}
+.add-menu { margin-top:12px; background:rgba(255,255,255,0.96); border-radius:18px; padding:10px; border:1px solid var(--dash-border); box-shadow:0 18px 40px rgba(0,0,0,0.12); width:230px; backdrop-filter:blur(10px); z-index:10;}
+.add-menu div { padding:9px 10px; border-radius:8px; cursor:pointer; transition:0.2s ease; }
+.menu-label { font-size:11px; font-weight:800; color:var(--dash-accent); text-transform:uppercase; letter-spacing:0.6px; margin-top:6px; }
+.add-menu div:hover { background: color-mix(in srgb,var(--dash-accent) 12%,#fff); }
+.resize-handle-left, .resize-handle-bottom { opacity:0; transition:opacity 0.2s ease;}
+.widget-shell:hover .resize-handle-left, .widget-shell:hover .resize-handle-bottom { opacity:0.8;}
+.resize-handle-left { position:absolute; left:-6px; top:50%; transform:translateY(-50%); width:10px; height:60px; border-left:2px solid var(--dash-accent); cursor:ew-resize;}
+.resize-handle-bottom { position:absolute; left:50%; bottom:-6px; transform:translateX(-50%); width:60px; height:10px; border-bottom:2px solid var(--dash-accent); cursor:ns-resize;}
+.ghost { opacity:0.4;}
+@keyframes fadeUp { from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+@media(max-width:992px){.widget-item{grid-column:span 6;}}
+@media(max-width:640px){.widget-item{grid-column:span 12;}}
 </style>
