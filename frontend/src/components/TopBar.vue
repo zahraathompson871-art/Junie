@@ -1,16 +1,13 @@
 <template>
   <nav class="topbar">
-    <!-- Left: Brand -->
     <div class="topbar-left">
       <router-link to="/" class="brand-name">Junie</router-link>
     </div>
 
-    <!-- Center: Expanded Search -->
     <div class="topbar-center">
-      <input type="text" class="search-bar" placeholder="Search...">
+      <input type="text" class="search-bar" placeholder="Search pages or templates..." />
     </div>
 
-    <!-- Right: Navigation + Cart -->
     <div class="topbar-right">
       <ul class="nav-links">
         <li><router-link to="/dashboard" class="nav-link">Dashboard</router-link></li>
@@ -18,9 +15,8 @@
         <li><router-link to="/creatorhub" class="nav-link">CreatorHub</router-link></li>
         <li class="profile-cart">
           <router-link to="/profile" class="nav-link">Profile</router-link>
-          <!-- Cart Icon next to Profile -->
           <div class="cart-icon" @click="$router.push('/cart')">
-            🛒
+            Cart
             <span v-if="cart.count > 0" class="cart-count">{{ cart.count }}</span>
           </div>
         </li>
@@ -45,35 +41,41 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #ffffff; /* white bar */
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #dbe3ff;
   position: sticky;
   top: 0;
   z-index: 1000;
+  gap: 16px;
+  backdrop-filter: blur(10px);
 }
 
 .brand-name {
-  color: #121212; /* black text */
-  font-weight: 900;
-  letter-spacing: 1px;
+  color: #1c2446;
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   text-decoration: none;
 }
+
 .brand-name:hover {
-  color: #333; /* darker hover */
+  color: #4a6cff;
 }
 
 .search-bar {
   width: 100%;
-  max-width: 600px;
-  padding: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  background-color: #fdfdf6; /* cream input background */
-  color: #121212;
+  min-width: 280px;
+  padding: 0.58rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid #dbe3ff;
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #202a4f;
 }
+
 .search-bar:focus {
-  border-color: #121212;
+  border-color: #9eb2ff;
   outline: none;
 }
 
@@ -87,13 +89,23 @@ export default {
 }
 
 .nav-link {
-  margin-left: 1rem;
-  color: #121212; /* black text */
+  margin-left: 0.75rem;
+  color: #5c6a95;
   text-decoration: none;
-  transition: color 0.3s ease;
+  transition: color 0.18s ease, background 0.18s ease;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.36rem 0.72rem;
 }
+
 .nav-link:hover {
-  color: #333; /* darker hover */
+  color: #24315e;
+  background: #eef3ff;
+}
+
+.nav-link.router-link-active {
+  color: #fff;
+  background: linear-gradient(135deg, #4a6cff, #5f7cff);
 }
 
 .profile-cart {
@@ -102,20 +114,41 @@ export default {
 }
 
 .cart-icon {
-  margin-left: 0.5rem;
+  margin-left: 0.75rem;
   cursor: pointer;
   position: relative;
-  font-size: 1.2rem;
-  color: #121212; /* black icon */
+  font-size: 0.88rem;
+  color: #2c3a6d;
+  border: 1px solid #ccdbff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #f4f8ff;
+  font-weight: 600;
 }
+
 .cart-count {
-  background: #121212; /* black badge */
+  background: linear-gradient(135deg, #4a6cff, #7c8dff);
   color: #fff;
   border-radius: 50%;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.8rem;
+  padding: 0.12rem 0.38rem;
+  font-size: 0.72rem;
   position: absolute;
   top: -8px;
-  right: -10px;
+  right: -8px;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    flex-wrap: wrap;
+  }
+
+  .topbar-center {
+    order: 3;
+    width: 100%;
+  }
+
+  .search-bar {
+    min-width: 0;
+  }
 }
 </style>
