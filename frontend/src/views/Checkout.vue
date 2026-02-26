@@ -24,12 +24,27 @@
         </li>
       </ul>
       <p class="total">Total: R{{ cart.total }}</p>
+      <p v-if="hasActiveSubscription" class="status success">Your template subscription is active.</p>
 
       <p v-if="paymentError" class="status error">{{ paymentError }}</p>
 
       <div class="actions" v-if="cart.items.length > 0">
         <button type="button" class="btn-glow" :disabled="startingCheckout" @click="startStripeCheckout">
           {{ startingCheckout ? 'Redirecting...' : 'Pay with Stripe' }}
+        </button>
+      </div>
+      <div class="actions">
+        <button
+          type="button"
+          class="btn-subscribe"
+          :disabled="startingSubscription || hasActiveSubscription"
+          @click="startStripeSubscription"
+        >
+          {{
+            hasActiveSubscription
+              ? 'Subscription Active'
+              : (startingSubscription ? 'Redirecting...' : 'Subscribe Monthly')
+          }}
         </button>
       </div>
     </form>
@@ -50,13 +65,16 @@ export default {
   data() {
     return {
       startingCheckout: false,
-      paymentError: ''
+      paymentError: '',
+      startingSubscription: false,
+      hasActiveSubscription: false
     }
   },
   mounted() {
     if (this.$route?.query?.canceled) {
       this.paymentError = 'Stripe checkout was canceled.'
     }
+    this.loadSubscriptionStatus()
   },
   methods: {
     getApiBaseUrl() {
@@ -79,6 +97,16 @@ export default {
       if (!this.cart.items.length) {
         throw new Error('Your cart is empty.')
       }
+    },
+    async loadSubscriptionStatus() {
+      const response = await fetch(`${this.getApiBaseUrl()}/api/stripe/subscription-status`, {
+        headers: {
+          Authorization: `Bearer ${this.getToken()}`
+        }
+      })
+      const data = await this.parseJson(response)
+      if (!response.ok) return
+      this.hasActiveSubscription = !!data.hasActiveSubscription
     },
     async startStripeCheckout() {
       try {
@@ -108,6 +136,30 @@ export default {
         this.paymentError = err.message || 'Failed to start Stripe checkout'
       } finally {
         this.startingCheckout = false
+      }
+    },
+    async startStripeSubscription() {
+      try {
+        this.paymentError = ''
+        this.startingSubscription = true
+
+        const response = await fetch(`${this.getApiBaseUrl()}/api/stripe/create-subscription-session`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.getToken()}`
+          }
+        })
+
+        const data = await this.parseJson(response)
+        if (!response.ok || !data.url) {
+          throw new Error(data.message || 'Failed to start subscription checkout')
+        }
+
+        window.location.href = data.url
+      } catch (err) {
+        this.paymentError = err.message || 'Failed to start subscription checkout'
+      } finally {
+        this.startingSubscription = false
       }
     }
   }
@@ -188,6 +240,21 @@ li {
   font-weight: bold;
 }
 
+.btn-subscribe {
+  background-color: #f5f2e8;
+  color: #121212;
+  border-radius: 8px;
+  padding: 12px 20px;
+  border: 1px solid #d4ccba;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.btn-subscribe:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .btn-glow:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -196,5 +263,10 @@ li {
 .status.error {
   color: #a12424;
   font-weight: 600;
+}
+
+.status.success {
+  color: #1f6b2f;
+  font-weight: 700;
 }
 </style>

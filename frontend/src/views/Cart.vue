@@ -31,55 +31,24 @@
         </div>
       </div>
 
-      <!-- Suggested Products -->
-      <div class="suggested-block mt-5">
-        <h2 class="text-glow">Other Products You May Like</h2>
-        <div class="suggested-products d-flex flex-wrap">
-          <div v-for="product in suggested" :key="product.id" class="suggested-item p-3 m-2">
-            <img :src="product.image" alt="Suggested product" class="product-img mb-2" />
-            <h5>{{ product.title }}</h5>
-            <p>R{{ product.price }}</p>
-            <button class="btn btn-sm btn-glow" @click="cart.addItem(product)">
-              Add to Cart
-            </button>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 </template>
 
 <script>
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
-import user from '../data/mockUser.js'
 
 export default {
   setup() {
     const cart = useCartStore()
     const router = useRouter()
 
-    const suggested = computed(() => {
-      const inCartIds = new Set(cart.items.map(item => item.id))
-      const candidates = [...user.products.trending, ...user.products.all]
-
-      const uniqueById = new Map()
-      for (const product of candidates) {
-        if (!uniqueById.has(product.id) && !inCartIds.has(product.id)) {
-          uniqueById.set(product.id, product)
-        }
-      }
-
-      return Array.from(uniqueById.values()).slice(0, 4)
-    })
-
     const checkout = () => {
       router.push('/checkout')
     }
 
-    return { cart, suggested, checkout }
+    return { cart, checkout }
   }
 }
 </script>
@@ -93,8 +62,8 @@ export default {
   padding-bottom: 40px;
 }
 
-/* Cart + Suggested Blocks */
-.cart-block, .suggested-block {
+/* Cart Block */
+.cart-block {
   background-color: #ffffff; /* white cards */
   border-radius: 12px;
   padding: 20px;
@@ -150,23 +119,4 @@ export default {
   color: #fff;
 }
 
-/* Suggested Products */
-.suggested-products {
-  display: flex;
-  flex-wrap: wrap;
-}
-.suggested-item {
-  width: 200px;
-  background-color: #ffffff; /* white card */
-  border-radius: 10px;
-  border: 1px solid #ddd;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  color: #121212;
-}
-.suggested-item h5 {
-  font-weight: 600;
-}
-.suggested-item p {
-  color: #555;
-}
 </style>

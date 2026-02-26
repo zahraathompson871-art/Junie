@@ -10,6 +10,7 @@ export const useCartStore = defineStore('cart', {
   },
   actions: {
     addItem(product) {
+      if (this.items.some(item => Number(item.id) === Number(product.id))) return
       this.items.push(product)
     },
     removeItem(id) {
