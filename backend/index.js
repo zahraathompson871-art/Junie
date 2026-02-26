@@ -4,6 +4,10 @@ import cors from "cors";
 import userRoutes from "./routes/userRoutes.js";
 import templateRoutes from "./routes/tempRoutes.js";
 import checkoutRoutes from "./routes/checkout.js";
+import workspaceRoutes from "./routes/workspaceRoutes.js";
+import bookRoutes from "./routes/bookRoutes.js";
+import pageRoutes from "./routes/pageRoutes.js";
+import blockRoutes from "./routes/blockRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import { pool } from "./config/db.js";
 
@@ -40,6 +44,10 @@ app.use("/api/users", userRoutes);
 app.use("/api/templates", templateRoutes);
 app.use("/api/stripe", checkoutRoutes);
 app.use("/api/checkout", checkoutRoutes);
+app.use("/api/workspaces", workspaceRoutes);
+app.use("/api/books", bookRoutes);
+app.use("/api/pages", pageRoutes);
+app.use("/api/blocks", blockRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

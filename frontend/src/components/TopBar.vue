@@ -11,6 +11,7 @@
     <div class="topbar-right">
       <ul class="nav-links">
         <li><router-link to="/dashboard" class="nav-link">Dashboard</router-link></li>
+        <li><router-link to="/notebooks" class="nav-link">Notebooks</router-link></li>
         <li><router-link to="/marketplace" class="nav-link">Marketplace</router-link></li>
         <li><router-link to="/creatorhub" class="nav-link">CreatorHub</router-link></li>
         <li class="profile-cart">
