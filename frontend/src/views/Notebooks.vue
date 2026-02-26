@@ -590,43 +590,52 @@ export default {
 <style scoped>
 .reader-home {
   min-height: calc(100vh - 72px);
-  background: #ececf1;
-  color: #1f2028;
+  background: var(--dash-bg, #f5faf1);
+  color: var(--dash-title, #253629);
 }
 
 .reader-wrap {
-  max-width: 1150px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 10px 20px 84px;
+  padding: 18px 20px 84px;
 }
 
 .top-search {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  gap: 14px;
 }
 
 .top-search h1 {
   margin: 0;
-  font-size: 3.2rem;
+  font-size: clamp(2rem, 4.2vw, 3rem);
   font-weight: 800;
   letter-spacing: -0.03em;
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
 }
 
 .top-search input {
-  width: 255px;
-  border: 1px solid #d6d6df;
-  background: #e2e2e9;
-  border-radius: 11px;
-  padding: 9px 12px;
-  font-size: 1.02rem;
+  width: 290px;
+  border: 1px solid var(--dash-border, #d5e5cf);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 10px 13px;
+  font-size: 0.98rem;
+  color: var(--dash-title, #253629);
+}
+
+.top-search input:focus {
+  outline: none;
+  border-color: var(--dash-accent, #6f8f63);
+  box-shadow: 0 0 0 3px rgba(111, 143, 99, 0.15);
 }
 
 .section-row {
-  border-top: 1px solid #d9d9e1;
-  padding-top: 9px;
-  margin-bottom: 10px;
+  border-top: 1px solid var(--dash-border, #d5e5cf);
+  padding-top: 12px;
+  margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -634,25 +643,31 @@ export default {
 
 .section-row h3 {
   margin: 0;
-  font-size: 1.13rem;
+  font-size: 1.08rem;
   font-weight: 700;
 }
 
 .all-docs {
-  margin-top: 18px;
+  margin-top: 20px;
 }
 
 .clear-btn {
-  border: none;
-  background: transparent;
-  color: #57a2bf;
-  font-weight: 600;
+  border: 1px solid var(--dash-border, #d5e5cf);
+  background: #fff;
+  color: var(--dash-title, #253629);
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 7px 12px;
+}
+
+.clear-btn:hover {
+  background: color-mix(in srgb, var(--dash-accent, #6f8f63) 12%, #fff);
 }
 
 .book-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 18px;
 }
 
 .book-card {
@@ -660,15 +675,20 @@ export default {
   background: transparent;
   text-align: left;
   padding: 0;
+  transition: transform 0.16s ease;
+}
+
+.book-card:hover {
+  transform: translateY(-2px);
 }
 
 .cover {
   height: 214px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.13);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(36, 56, 122, 0.14);
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid color-mix(in srgb, var(--dash-border, #d5e5cf) 75%, #fff);
 }
 
 .cover-strip {
@@ -689,7 +709,7 @@ export default {
 
 .cover-title {
   display: block;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   line-height: 1.3;
   font-weight: 700;
   color: #392f25;
@@ -718,10 +738,10 @@ export default {
 
 .book-name {
   display: block;
-  margin-top: 8px;
-  font-size: 1.12rem;
-  font-weight: 600;
-  color: #1f2028;
+  margin-top: 9px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--dash-title, #253629);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -729,28 +749,29 @@ export default {
 
 .book-window {
   margin-top: 18px;
-  border-radius: 14px;
-  background: var(--nb-shell-bg, #e7dac2);
-  border: 1px solid var(--nb-shell-border, #ceb996);
-  padding: 12px;
+  border-radius: 18px;
+  background: var(--dash-card, rgba(255, 255, 255, 0.92));
+  border: 1px solid var(--dash-border, #d5e5cf);
+  padding: 14px;
+  box-shadow: 0 14px 30px rgba(36, 56, 122, 0.12);
   transform-origin: top center;
 }
 
 .book-window.opening {
-  animation: bookWindowOpen 0.85s ease;
+  animation: bookWindowOpen 0.6s ease;
 }
 
 @keyframes bookWindowOpen {
   0% {
     opacity: 0;
-    transform: scaleY(0.2) translateY(-24px);
+    transform: scale(0.98) translateY(-10px);
   }
-  45% {
+  55% {
     opacity: 1;
-    transform: scaleY(1.02) translateY(0);
+    transform: scale(1.005) translateY(0);
   }
   100% {
-    transform: scaleY(1);
+    transform: scale(1);
   }
 }
 
@@ -765,8 +786,9 @@ export default {
 .window-top h4 {
   margin: 0;
   text-align: center;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.3rem;
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
+  font-size: 1.22rem;
+  color: var(--dash-title, #253629);
 }
 
 .window-actions {
@@ -776,34 +798,41 @@ export default {
 
 .window-actions input,
 .page-title {
-  border: 1px solid #cab48f;
-  background: #fff9ec;
-  border-radius: 9px;
-  padding: 7px 10px;
+  border: 1px solid var(--dash-border, #d5e5cf);
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: var(--dash-title, #253629);
 }
 
 .back-btn,
 .action-btn,
 .toolbar button {
-  border: 1px solid #bda882;
-  background: #f2e6cd;
-  border-radius: 9px;
+  border: 1px solid var(--dash-border, #d5e5cf);
+  background: #fff;
+  border-radius: 10px;
   padding: 7px 10px;
   font-weight: 700;
-  color: #4d3b23;
+  color: var(--dash-title, #253629);
+}
+
+.action-btn {
+  background: linear-gradient(135deg, var(--dash-accent, #6f8f63), var(--dash-accent-2, #9caf88));
+  color: #fff;
+  border-color: transparent;
 }
 
 .book-shell {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 12px;
 }
 
 .pages-col {
-  border: 1px solid var(--nb-side-border, #ccb898);
-  background: var(--nb-side-bg, #efe2c9);
-  border-radius: 10px;
-  padding: 8px;
+  border: 1px solid var(--dash-border, #d5e5cf);
+  background: color-mix(in srgb, var(--dash-accent, #6f8f63) 7%, #fff);
+  border-radius: 12px;
+  padding: 10px;
 }
 
 .page-pill {
@@ -811,38 +840,39 @@ export default {
   text-align: left;
   border: none;
   background: transparent;
-  padding: 8px;
-  border-radius: 8px;
-  color: #5b472c;
-  margin-bottom: 3px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  color: var(--dash-title, #253629);
+  margin-bottom: 4px;
+  font-weight: 600;
 }
 
 .page-pill.active,
 .page-pill:hover {
-  background: var(--nb-side-active, #e1cfad);
+  background: color-mix(in srgb, var(--dash-accent, #6f8f63) 18%, #fff);
 }
 
 .page-col {
-  border: 1px solid #d4c6a9;
-  background: #fdf8ee;
-  border-radius: 10px;
-  padding: 10px;
+  border: 1px solid var(--dash-border, #d5e5cf);
+  background: #fcfffb;
+  border-radius: 12px;
+  padding: 12px;
 }
 
 .lined-page {
   position: relative;
-  border: 1px solid #e5dcc9;
-  border-radius: 10px;
+  border: 1px solid #dfe8de;
+  border-radius: 12px;
   padding: 10px 10px 10px 46px;
-  min-height: 1400px;
+  min-height: 1200px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
   background:
     repeating-linear-gradient(
       to bottom,
-      #fffdf7 0px,
-      #fffdf7 34px,
-      #d4e2f5 35px,
-      #fffdf7 36px
+      #fcfffb 0px,
+      #fcfffb 34px,
+      #deebdf 35px,
+      #fcfffb 36px
     );
 }
 
@@ -860,6 +890,7 @@ export default {
   display: flex;
   gap: 6px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .page-title-row {
@@ -872,34 +903,34 @@ export default {
 .page-index {
   white-space: nowrap;
   font-size: 0.85rem;
-  color: #6d5a3e;
+  color: #5d6e5f;
   font-weight: 700;
 }
 
 .page-title {
   width: 100%;
   font-weight: 700;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 .document-area {
-  min-height: 1200px;
+  min-height: 1000px;
 }
 
 .doc-editor {
-  min-height: 1100px;
-  border: 1px solid #ddd2bc;
-  border-radius: 9px;
-  background: rgba(255, 253, 246, 0.92);
+  min-height: 900px;
+  border: 1px solid #dce8dd;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.95);
   padding: 14px 14px 40px;
-  font-family: "Times New Roman", Georgia, serif;
-  font-size: 17px;
-  line-height: 1.75;
-  color: #2f2417;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #2e3f32;
 }
 
 .doc-editor:focus {
-  outline: 2px solid #d2b98a;
+  outline: 2px solid rgba(111, 143, 99, 0.35);
 }
 
 .empty {
@@ -908,7 +939,7 @@ export default {
 
 .inline-loading {
   font-size: 0.92rem;
-  color: #7a694a;
+  color: #5d6e5f;
   margin-bottom: 8px;
 }
 
@@ -935,9 +966,9 @@ export default {
 }
 
 .toast-msg.success {
-  background: #dff5e7;
-  color: #1d6342;
-  border: 1px solid #bce7cd;
+  background: #e4f5e8;
+  color: #20553a;
+  border: 1px solid #c7e9d1;
 }
 
 .toast-msg.error {
@@ -959,11 +990,11 @@ export default {
 
 @media (max-width: 900px) {
   .top-search h1 {
-    font-size: 2.2rem;
+    font-size: 2rem;
   }
 
   .top-search input {
-    width: 180px;
+    width: 100%;
   }
 
   .book-shell {

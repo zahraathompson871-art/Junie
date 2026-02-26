@@ -25,8 +25,7 @@ const routes = [
   { path: '/profile', name: 'Profile', component: Profile },
   { path: '/cart', name: 'Cart', component: Cart },
   { path: '/checkout', name: 'Checkout', component: Checkout },
-  { path: '/thankyou', name: 'ThankYou', component: ThankYou },
-  { path: '/notebooks', name: 'Notebooks', component: Notebooks }
+  { path: '/thankyou', name: 'ThankYou', component: ThankYou }
 ]
 
 const router = createRouter({
@@ -35,16 +34,16 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token') // stored when login/signup succeeds
+  const token = localStorage.getItem('token')
 
   const protectedRoutes = [
     'Dashboard', 'Marketplace', 'CreatorHub', 'Profile', 'Cart', 'Checkout', 'ThankYou', 'Notebooks'
   ]
 
+  console.log('Navigation:', from.name, '->', to.name, 'HasToken:', !!token)
+
   if (protectedRoutes.includes(to.name) && !token) {
-    next({ name: 'Login' }) // redirect to login if not authenticated
-  } else {
-    next()
+    return next({ name: 'Login' })
   }
 })
 

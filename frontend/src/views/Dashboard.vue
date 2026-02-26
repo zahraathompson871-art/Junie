@@ -40,6 +40,9 @@
         />
 
         <h2 class="dashboard-title">My Dashboard</h2>
+        <p class="dashboard-quote">
+          It all begins with your mind. What you give power to has power over you.
+        </p>
       </div>
 
       <!-- ADD WIDGET TOOLBAR -->
@@ -92,20 +95,14 @@
 </template>
 
 <script>
-import draggable from 'vuedraggable'
-import ToDoWidget from '../components/widgets/toDoWidget.vue'
-import GoalWidget from '../components/widgets/goalWidget.vue'
-import PomodoroWidget from '../components/widgets/pomodoroWidget.vue'
-import CalendarWidget from '../components/widgets/calendarWidget.vue'
-import PictureWidget from '../components/widgets/pictureWidget.vue'
-import AssignmentTrackerWidget from '../components/widgets/assignmentTrackerWidget.vue'
-import StudySessionLogWidget from '../components/widgets/studySessionLogWidget.vue'
-import MoodTrackerWidget from '../components/widgets/moodTrackerWidget.vue'
-import QuickNotesWidget from '../components/widgets/quickNotesWidget.vue'
+import ToDoWidget from '../components/widgets/toDoWidget.vue';
+import GoalWidget from '../components/widgets/goalWidget.vue';
+import PomodoroWidget from '../components/widgets/pomodoroWidget.vue';
+import CalendarWidget from '../components/widgets/calendarWidget.vue';
+import PictureWidget from '../components/widgets/pictureWidget.vue';
 
 export default {
   components: {
-    draggable,
     ToDoWidget,
     GoalWidget,
     PomodoroWidget,
