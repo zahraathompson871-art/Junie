@@ -38,7 +38,7 @@ app.get("/api/health/db", async (req, res) => {
 
 app.use("/api/users", userRoutes);
 app.use("/api/templates", templateRoutes);
-app.use("/api/paypal", checkoutRoutes);
+app.use("/api/stripe", checkoutRoutes);
 app.use("/api/checkout", checkoutRoutes);
 
 app.use(notFound);
