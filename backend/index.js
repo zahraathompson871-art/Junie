@@ -1,12 +1,13 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
-dotenv.config();
-import dotenv from "dotenv";
 import userRoutes from "./routes/userRoutes.js";
+import templateRoutes from "./routes/tempRoutes.js";
+import checkoutRoutes from "./routes/checkout.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import { pool } from "./config/db.js";
 
-
+dotenv.config();
 
 const app = express();
 
@@ -36,6 +37,9 @@ app.get("/api/health/db", async (req, res) => {
 });
 
 app.use("/api/users", userRoutes);
+app.use("/api/templates", templateRoutes);
+app.use("/api/stripe", checkoutRoutes);
+app.use("/api/checkout", checkoutRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

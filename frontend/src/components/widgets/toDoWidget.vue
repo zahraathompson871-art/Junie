@@ -72,11 +72,26 @@
 <script>
 export default {
     props: ['data'],
+    emits: ['update:data'],
     data() {
         return {
-            tasks: this.data || [],
+            tasks: Array.isArray(this.data) ? [...this.data] : [],
             showInput: false,
             newTask: ''
+        }
+    },
+    watch: {
+        data: {
+            handler(value) {
+                this.tasks = Array.isArray(value) ? [...value] : []
+            },
+            deep: true
+        },
+        tasks: {
+            handler(value) {
+                this.$emit('update:data', value)
+            },
+            deep: true
         }
     },
     computed: {
@@ -137,7 +152,7 @@ export default {
 .counter {
     font-size: 13px;
     font-weight: 600;
-    color: #4a90e2;
+    color: #5d5951;
 }
 
 /* Add Task Section */
@@ -148,7 +163,7 @@ export default {
 .add-btn {
     width: 100%;
     padding: 8px;
-    background-color: #4a90e2;
+    background-color: #37352f;
     color: #ffffff;
     border: none;
     border-radius: 6px;
@@ -157,7 +172,7 @@ export default {
 }
 
 .add-btn:hover {
-    background-color: #3d7cc4;
+    background-color: #2f2c27;
 }
 
 .input-group {
@@ -174,7 +189,7 @@ export default {
 }
 
 .save-btn {
-    background-color: #2ecc71;
+    background-color: #37352f;
     color: white;
     border: none;
     padding: 6px 10px;
@@ -184,7 +199,7 @@ export default {
 }
 
 .cancel-btn {
-    background-color: #999999;
+    background-color: #8c877f;
     color: white;
     border: none;
     padding: 6px 10px;
@@ -225,7 +240,7 @@ export default {
 .checkbox {
     width: 16px;
     height: 16px;
-    accent-color: #4a90e2;
+    accent-color: #37352f;
 }
 
 .task-text {
@@ -247,12 +262,12 @@ export default {
 }
 
 .progress-bar {
-    background-color: #4a90e2;
+    background-color: #37352f;
     height: 100%;
     transition: width 0.3s ease;
 }
 
 .progress-bar.complete {
-    background-color: #2ecc71;
+    background-color: #4f4a42;
 }
 </style>

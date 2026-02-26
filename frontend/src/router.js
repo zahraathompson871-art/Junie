@@ -24,11 +24,11 @@ const routes = [
   { path: '/profile', name: 'Profile', component: Profile },
   { path: '/cart', name: 'Cart', component: Cart },
   { path: '/checkout', name: 'Checkout', component: Checkout },
-  { path: '/thankyou', name: 'ThankYou', component: ThankYou } 
+  { path: '/thankyou', name: 'ThankYou', component: ThankYou }
 ]
 
 const router = createRouter({
-  history: createWebHashHistory(), // ✅ switched to hash history
+  history: createWebHashHistory(),
   routes
 })
 
@@ -44,13 +44,6 @@ router.beforeEach((to, from, next) => {
   } else {
     next()
   }
-
-  if (isAuthenticated && !user.isProfileComplete && to.name !== 'CreateAccount') {
-    return next({ name: 'CreateAccount' })
-  }
-
-  next()
 })
 
 export default router
-

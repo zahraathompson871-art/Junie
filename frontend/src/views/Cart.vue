@@ -45,27 +45,41 @@
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </template>
 
 <script>
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
+import user from '../data/mockUser.js'
 
 export default {
   setup() {
     const cart = useCartStore()
+    const router = useRouter()
+
+    const suggested = computed(() => {
+      const inCartIds = new Set(cart.items.map(item => item.id))
+      const candidates = [...user.products.trending, ...user.products.all]
+
+      const uniqueById = new Map()
+      for (const product of candidates) {
+        if (!uniqueById.has(product.id) && !inCartIds.has(product.id)) {
+          uniqueById.set(product.id, product)
+        }
+      }
+
+      return Array.from(uniqueById.values()).slice(0, 4)
+    })
+
     const checkout = () => {
-      window.location.href = "/checkout"
+      router.push('/checkout')
     }
 
-    const suggested = [
-      { id: 2, title: "Logo Pack", price: 15, image: "logo-pack.jpg" },
-      { id: 3, title: "Social Media Kit", price: 20, image: "social-kit.jpg" },
-      { id: 4, title: "Poster Templates", price: 12, image: "poster-templates.jpg" }
-    ]
-
-    return { cart, checkout, suggested }
+    return { cart, suggested, checkout }
   }
 }
 </script>
