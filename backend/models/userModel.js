@@ -1,5 +1,16 @@
 import {pool} from "../config/db.js";
 
+const withDashboardUserColumn = async (onColumn) => {
+    try {
+        return await onColumn("user_id");
+    } catch (err) {
+        if (err?.code === "ER_BAD_FIELD_ERROR") {
+            return onColumn("users_id");
+        }
+        throw err;
+    }
+};
+
 export const getUserByEmail = async (email) => {
     const [rows] = await pool.query(
         "SELECT * FROM users WHERE email = ?", [email]
@@ -87,26 +98,37 @@ export const createUserTasks = async (userId) => {
 };
 
 export const getUserDashboard = async (userId) => {
-    const [rows] = await pool.query(
-        "SELECT id, widget_type, widget_data, position FROM dashboard_widgets WHERE users_id = ? ORDER BY position ASC", [userId]
+    const [rows] = await withDashboardUserColumn((userColumn) =>
+        pool.query(
+            `SELECT id, widget_type, widget_data, position FROM dashboard_widgets WHERE ${userColumn} = ? ORDER BY position ASC`,
+            [userId]
+        )
     );
+    const safeParse = (value) => {
+        if (typeof value !== "string") return value || {};
+        try {
+            return JSON.parse(value);
+        } catch {
+            return {};
+        }
+    };
     return rows.map(widget => ({
         id: widget.id,
         type: widget.widget_type,
-        data: typeof widget.widget_data === "string"
-            ? JSON.parse(widget.widget_data)
-            : (widget.widget_data || {})
+        data: safeParse(widget.widget_data)
     }));
 };
 
 export const saveUserDashboard = async (userId, widgets) => {
-    await pool.query("DELETE FROM dashboard_widgets WHERE users_id = ?", [userId]);
+    await withDashboardUserColumn(async (userColumn) => {
+        await pool.query(`DELETE FROM dashboard_widgets WHERE ${userColumn} = ?`, [userId]);
 
-    for (let i = 0; i < widgets.length; i++) {
-        const widget = widgets[i];
-        await pool.query(
-            "INSERT INTO dashboard_widgets (users_id, widget_type, widget_data, position) VALUES (?, ?, ?, ?)",
-            [userId, widget.type, JSON.stringify(widget.data), i]
-        );
-    }
+        for (let i = 0; i < widgets.length; i++) {
+            const widget = widgets[i];
+            await pool.query(
+                `INSERT INTO dashboard_widgets (${userColumn}, widget_type, widget_data, position) VALUES (?, ?, ?, ?)`,
+                [userId, widget.type, JSON.stringify(widget.data), i]
+            );
+        }
+    });
 };
