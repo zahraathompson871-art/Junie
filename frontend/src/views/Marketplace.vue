@@ -2,12 +2,16 @@
   <div class="main">
     <div class="container mt-4">
       <h2 class="text-glow mb-4">Dashboard Templates</h2>
-      <p class="text-muted mb-4">Browse templates and apply what you purchase.</p>
+      <p v-if="hasActiveSubscription" class="text-muted mb-4">Browse and apply any template — included with your Premium plan.</p>
+      <div v-else class="free-banner mb-4">
+        <p><strong>Upgrade to Premium</strong> to access all templates and apply them to your dashboard.</p>
+        <button class="btn-upgrade" @click="upgradeToPremium">Get Premium</button>
+      </div>
 
       <p v-if="error" class="text-danger">{{ error }}</p>
       <p v-if="success" class="text-success">{{ success }}</p>
 
-      <div class="row g-4">
+      <div class="row g-4" data-tour="marketplace-grid">
         <div class="col-md-4" v-for="template in templates" :key="template.id">
           <div class="product-card">
             <div class="product-image">
@@ -17,7 +21,6 @@
               <h6 class="product-title">{{ template.title }}</h6>
               <p class="product-description text-muted">{{ template.description }}</p>
               <div class="meta-row">
-                <span class="product-price">R{{ template.price ?? 59 }}</span>
                 <span class="widget-count">{{ template.widgetCount ?? '-' }} widgets</span>
               </div>
               <div class="theme-meta" v-if="template.theme?.name">
@@ -36,22 +39,22 @@
                 Preview
               </button>
               <button
-                v-if="isTemplateUnlocked(template)"
+                v-if="hasActiveSubscription"
                 class="btn btn-glow mt-2 w-100"
                 :disabled="applyingId === template.id"
                 @click="applyTemplate(template.id)"
               >
-                {{ applyingId === template.id ? 'Applying...' : 'Apply to Dashboard' }}
+                {{ applyingId === template.id ? 'Applying...' : 'Apply Template' }}
               </button>
               <button
                 v-else
-                class="btn btn-glow mt-2 w-100"
-                @click="addToCart(template)"
+                class="btn btn-upgrade mt-2 w-100"
+                @click="upgradeToPremium"
               >
-                Add to Cart
+                Upgrade to Premium
               </button>
-              <p v-if="isTemplateUnlocked(template)" class="unlock-tag">
-                {{ hasActiveSubscription ? 'Unlocked by subscription' : 'Purchased template' }}
+              <p v-if="hasActiveSubscription" class="unlock-tag">
+                Included with your Premium plan
               </p>
             </div>
           </div>
@@ -132,8 +135,6 @@
 </template>
 
 <script>
-import { useCartStore } from '../stores/cart'
-
 export default {
   data() {
     return {
@@ -143,13 +144,8 @@ export default {
       success: '',
       previewOpen: false,
       previewTemplate: null,
-      hasActiveSubscription: false,
-      purchasedTemplateIds: []
+      hasActiveSubscription: false
     }
-  },
-  setup() {
-    const cart = useCartStore()
-    return { cart }
   },
   computed: {
     previewWidgetCards() {
@@ -205,22 +201,6 @@ export default {
       if (!response.ok) return
 
       this.hasActiveSubscription = !!data.hasActiveSubscription
-      this.purchasedTemplateIds = Array.isArray(data.purchasedTemplateIds) ? data.purchasedTemplateIds : []
-    },
-    isTemplateUnlocked(template) {
-      if (!template) return false
-      return this.hasActiveSubscription || this.purchasedTemplateIds.includes(Number(template.id))
-    },
-    addToCart(template) {
-      if (!this.cart.items.some(item => Number(item.id) === Number(template.id))) {
-        this.cart.addItem({
-          id: Number(template.id),
-          title: template.title,
-          price: Number(template.price || 59),
-          image: template.image
-        })
-      }
-      this.$router.push('/cart')
     },
     openPreview(template) {
       this.previewTemplate = template
@@ -293,6 +273,9 @@ export default {
       } finally {
         this.applyingId = null
       }
+    },
+    upgradeToPremium() {
+      this.$router.push('/checkout')
     }
   }
 }
@@ -302,163 +285,287 @@ export default {
 .main {
   flex: 1;
   overflow-y: auto;
-  background-color: #f7f6f3;
-  color: #37352f;
+  background: #f7f6f3;
+  color: #1a1917;
+  font-family: 'DM Sans', 'Helvetica Neue', sans-serif;
 }
+
+.text-glow {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #1a1917;
+  margin-bottom: 6px;
+}
+
+.text-muted {
+  color: #a0998f;
+  font-size: 0.93rem;
+  margin-bottom: 0;
+}
+
+.free-banner {
+  background: #fff;
+  border: 1.5px solid #f0c060;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.free-banner p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #7a5000;
+}
+
+.text-danger { color: #dc2626; font-size: 13.5px; }
+.text-success { color: #2d7a52; font-size: 13.5px; }
 
 .product-card {
   background: #fff;
-  border: 1px solid #e6e3dd;
-  border-radius: 10px;
+  border: 1.5px solid #eeecea;
+  border-radius: 16px;
   padding: 12px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  border-color: #d0cdc8;
 }
 
 .product-image {
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 10px;
+  border: 1px solid #eeecea;
 }
 
 .product-image img {
   width: 100%;
-  height: 190px;
+  height: 180px;
   object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image img { transform: scale(1.02); }
+
+.product-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 6px;
 }
 
 .product-title {
-  font-weight: 600;
-  color: #37352f;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1917;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .product-description {
-  font-size: 0.92rem;
+  font-size: 12.5px;
+  color: #8a867e;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .meta-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-}
-
-.product-price {
-  font-weight: 700;
 }
 
 .widget-count {
-  font-size: 12px;
-  color: #8a867e;
-}
-
-.unlock-tag {
-  margin-top: 8px;
-  margin-bottom: 0;
-  font-size: 12px;
-  color: #53627d;
+  font-size: 11px;
   font-weight: 600;
+  color: #b0aba3;
+  background: #f5f4f1;
+  padding: 3px 8px;
+  border-radius: 99px;
 }
 
 .theme-meta {
-  margin-top: 8px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .theme-name {
-  color: #526187;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  margin-right: 2px;
+  color: #a0998f;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 3px;
 }
 
 .theme-dot {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  border: 1px solid rgba(35, 53, 93, 0.22);
+  border: 1.5px solid rgba(0,0,0,0.1);
+}
+
+.btn {
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 14px;
+  transition: all 0.15s;
+  text-align: center;
+  width: 100%;
+  display: block;
+}
+
+.btn-outline-secondary {
+  background: #faf9f7;
+  border: 1.5px solid #eeecea;
+  color: #6b6760;
+}
+
+.btn-outline-secondary:hover {
+  background: #f0ede8;
+  border-color: #d0cdc8;
+  color: #3d3a35;
+}
+
+.btn-glow {
+  background: #1a1917;
+  color: #fff;
+  border: none;
+  margin-top: 4px;
+}
+
+.btn-glow:hover:not(:disabled) { background: #2d2b28; }
+.btn-glow:disabled { background: #c0bbb5; cursor: not-allowed; }
+
+.btn-upgrade {
+  background: linear-gradient(135deg, #f0c060, #e8a020);
+  color: #5a3800;
+  border: none;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.btn-upgrade:hover { background: linear-gradient(135deg, #e8b030, #d09010); }
+
+.unlock-tag {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #3a9e6f;
+  text-align: center;
 }
 
 .preview-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(25, 35, 52, 0.22);
+  background: rgba(26,25,23,0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 16px;
+  padding: 20px;
+  backdrop-filter: blur(3px);
 }
 
 .preview-modal {
   width: min(520px, 100%);
-  background: #f7fbff;
-  border: 1px solid #d9e7f6;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 18px 45px rgba(40, 88, 132, 0.18);
+  background: #fff;
+  border: 1.5px solid #eeecea;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 24px 56px rgba(0,0,0,0.14);
 }
 
 .preview-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.preview-header h5 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1917;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .close-btn {
-  border: 1px solid #c8d7ea;
-  background: #fff;
-  color: #4d6480;
-  border-radius: 8px;
   width: 28px;
   height: 28px;
-  line-height: 1;
+  border: 1.5px solid #eeecea;
+  background: #faf9f7;
+  color: #6b6760;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.15s;
+  font-family: inherit;
 }
+
+.close-btn:hover { background: #f0ede8; color: #3d3a35; }
 
 .preview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   gap: 10px;
 }
 
 .preview-widget {
-  border: 1px solid #d2e6f8;
-  border-radius: 10px;
-  background: #ffffff;
-  padding: 8px;
+  border: 1.5px solid #eeecea;
+  border-radius: 12px;
+  background: #faf9f7;
+  padding: 10px 8px;
+  text-align: center;
 }
 
 .widget-thumb {
-  height: 56px;
+  height: 52px;
   border-radius: 8px;
-  background: linear-gradient(180deg, #f8fbff 0%, #e8f3fc 100%);
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e0edf9;
+  border: 1px solid #eeecea;
   margin-bottom: 8px;
   overflow: hidden;
 }
 
 .widget-pill {
-  background: color-mix(in srgb, var(--widget-accent) 16%, #ffffff);
+  background: color-mix(in srgb, var(--widget-accent) 14%, #fff);
   color: var(--widget-accent);
-  border: 1px solid color-mix(in srgb, var(--widget-accent) 35%, #ffffff);
-  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--widget-accent) 28%, #eeecea);
+  border-radius: 99px;
   padding: 3px 10px;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .widget-name {
-  color: #31506a;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  color: #6b6760;
 }
 
-.mini-list,
-.mini-notes,
-.mini-goal {
-  width: 78%;
-}
+.mini-list, .mini-notes, .mini-goal { width: 80%; }
 
 .mini-item {
   display: flex;
@@ -467,86 +574,71 @@ export default {
   margin-bottom: 4px;
 }
 
-.mini-item:last-child {
-  margin-bottom: 0;
-}
+.mini-item:last-child { margin-bottom: 0; }
 
 .mini-check {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 2px;
-  border: 1px solid var(--widget-accent);
+  border: 1.5px solid var(--widget-accent);
   background: #fff;
 }
 
 .mini-line {
   flex: 1;
   height: 3px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--widget-accent) 42%, #ffffff);
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--widget-accent) 35%, #eeecea);
 }
 
-.mini-notes {
-  display: grid;
-  gap: 4px;
-}
+.mini-notes { display: grid; gap: 4px; }
 
 .note-line {
   display: block;
-  height: 4px;
+  height: 3px;
   width: 75%;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--widget-accent) 35%, #ffffff);
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--widget-accent) 30%, #eeecea);
 }
-
-.note-line.long {
-  width: 92%;
-}
-
-.note-line.short {
-  width: 55%;
-}
+.note-line.long { width: 92%; }
+.note-line.short { width: 50%; }
 
 .mini-calendar {
-  width: 78%;
+  width: 80%;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  gap: 3px;
 }
 
 .mini-cell {
-  height: 8px;
+  height: 7px;
   border-radius: 2px;
-  background: color-mix(in srgb, var(--widget-accent) 26%, #ffffff);
+  background: color-mix(in srgb, var(--widget-accent) 22%, #eeecea);
 }
 
-.mini-goal {
-  display: grid;
-  gap: 6px;
-}
+.mini-goal { display: grid; gap: 6px; }
 
 .goal-label {
   display: block;
-  height: 4px;
-  width: 60%;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--widget-accent) 32%, #ffffff);
+  height: 3px;
+  width: 55%;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--widget-accent) 28%, #eeecea);
 }
 
 .goal-track {
   display: block;
-  height: 8px;
+  height: 7px;
   width: 100%;
-  border-radius: 999px;
-  background: #ffffff;
-  border: 1px solid #d9e8f7;
+  border-radius: 99px;
+  background: #eeecea;
 }
 
 .goal-fill {
   display: block;
   height: 100%;
   width: 62%;
-  border-radius: 999px;
+  border-radius: 99px;
   background: var(--widget-accent);
 }
 
@@ -554,61 +646,47 @@ export default {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--widget-accent) 55%, #ffffff);
+  border: 2px solid color-mix(in srgb, var(--widget-accent) 50%, #eeecea);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .timer-core {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--widget-accent) 35%, #ffffff);
+  background: color-mix(in srgb, var(--widget-accent) 30%, #fff);
 }
 
-.mini-mood {
-  display: flex;
-  gap: 6px;
-}
+.mini-mood { display: flex; gap: 5px; }
 
 .mood-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--widget-accent) 40%, #ffffff);
-  border: 1px solid color-mix(in srgb, var(--widget-accent) 62%, #ffffff);
+  background: color-mix(in srgb, var(--widget-accent) 35%, #fff);
+  border: 1.5px solid color-mix(in srgb, var(--widget-accent) 55%, #eeecea);
 }
 
 .mini-photo {
-  width: 74%;
-  height: 34px;
+  width: 72%;
+  height: 32px;
   border-radius: 6px;
-  background: linear-gradient(180deg, #f9fdff 0%, #d7e9fa 100%);
-  border: 1px solid #d4e6f7;
+  background: linear-gradient(180deg, #faf9f7 0%, #eeecea 100%);
+  border: 1px solid #eeecea;
   position: relative;
   overflow: hidden;
 }
 
-.mount-a,
-.mount-b {
+.mount-a, .mount-b {
   position: absolute;
   bottom: -4px;
-  width: 22px;
-  height: 18px;
-  background: color-mix(in srgb, var(--widget-accent) 45%, #ffffff);
+  width: 20px;
+  height: 16px;
+  background: color-mix(in srgb, var(--widget-accent) 40%, #fff);
   transform: rotate(45deg);
 }
-
-.mount-a {
-  left: 8px;
-}
-
-.mount-b {
-  left: 24px;
-  width: 16px;
-  height: 16px;
-  background: color-mix(in srgb, var(--widget-accent) 60%, #ffffff);
-}
+.mount-a { left: 8px; }
+.mount-b { left: 22px; width: 14px; height: 14px; background: color-mix(in srgb, var(--widget-accent) 55%, #fff); }
 </style>
-

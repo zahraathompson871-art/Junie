@@ -22,6 +22,23 @@ const ensureCommerceSchema = async () => {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      user_id BIGINT UNSIGNED NOT NULL,
+      stripe_customer_id VARCHAR(255) NULL,
+      stripe_subscription_id VARCHAR(255) NOT NULL,
+      plan_code VARCHAR(64) NOT NULL DEFAULT 'templates_monthly',
+      status VARCHAR(40) NOT NULL,
+      current_period_end DATETIME NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE KEY uniq_stripe_subscription (stripe_subscription_id),
+      KEY idx_user_status (user_id, status)
+    )
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS simulated_payments (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
       session_id VARCHAR(80) NOT NULL,
@@ -70,7 +87,6 @@ const applyTemplatePurchases = async ({ userId, cartItems }) => {
         );
       }
     } catch (err) {
-      // Keep simulated payment flow resilient even if optional widget tables are unavailable.
       console.warn(`Skipping widget application for template ${templateId}:`, err.message);
     }
 
@@ -89,6 +105,23 @@ const applyNotebookPurchases = async ({ userId, cartItems }) => {
       await unlockNotebookUnlimited(userId);
     }
   }
+};
+
+const applyPremiumPurchases = async ({ userId, cartItems }) => {
+  const hasPremium = cartItems.some((item) => String(item?.type || "") === "premium_subscription");
+  if (!hasPremium) return;
+
+  await pool.query(
+    `INSERT INTO subscriptions (user_id, stripe_subscription_id, plan_code, status, current_period_end)
+     VALUES (?, ?, 'templates_monthly', 'active', DATE_ADD(NOW(), INTERVAL 1 MONTH))
+     ON DUPLICATE KEY UPDATE
+       status = 'active',
+       plan_code = 'templates_monthly',
+       current_period_end = DATE_ADD(NOW(), INTERVAL 1 MONTH)`,
+    [userId, `SIM-SUB-${userId}`]
+  );
+
+  await unlockNotebookUnlimited(userId);
 };
 
 router.post("/create-checkout-session", protect, async (req, res) => {
@@ -148,6 +181,7 @@ router.post("/confirm-session", protect, async (req, res) => {
     if (pending && !pending.finalized) {
       await applyTemplatePurchases({ userId, cartItems: pending.cartItems });
       await applyNotebookPurchases({ userId, cartItems: pending.cartItems });
+      await applyPremiumPurchases({ userId, cartItems: pending.cartItems });
       pending.finalized = true;
     } else if (!pending) {
       const cartItems = Array.isArray(payment.cart_items_json)
@@ -155,6 +189,7 @@ router.post("/confirm-session", protect, async (req, res) => {
         : JSON.parse(payment.cart_items_json || "[]");
       await applyTemplatePurchases({ userId, cartItems });
       await applyNotebookPurchases({ userId, cartItems });
+      await applyPremiumPurchases({ userId, cartItems });
     }
 
     if (payment.status !== "COMPLETE") {
@@ -180,3 +215,4 @@ router.get("/subscription-status", protect, async (req, res) => {
 });
 
 export default router;
+

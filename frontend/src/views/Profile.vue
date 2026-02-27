@@ -46,7 +46,7 @@
         </div>
       </section>
 
-      <section class="account-panel">
+      <section class="account-panel" data-tour="profile-settings">
         <h5>Account Settings</h5>
         <p>Manage your profile details and keep your account secure.</p>
         <div class="settings-actions">
@@ -56,14 +56,39 @@
         </div>
       </section>
 
-      <!-- Edit Profile Modal -->
+      
+      <section class="plan-panel mb-4">
+        <div class="plan-header">
+          <div>
+            <h5>Current Plan</h5>
+            <p v-if="isPremium">You're on <strong>Premium</strong> — enjoy unlimited notebooks and all templates.</p>
+            <p v-else>You're on the <strong>Free plan</strong> — 1 notebook, Calendar, To-Do & Goal Tracker widgets.</p>
+          </div>
+          <div class="plan-badge" :class="isPremium ? 'badge-premium' : 'badge-free'">
+            {{ isPremium ? '✨ Premium' : 'Free' }}
+          </div>
+        </div>
+        <div v-if="!isPremium" class="plan-upgrade">
+          <div class="upgrade-features">
+            <p class="feature-title">Upgrade to Premium and get:</p>
+            <ul>
+              <li>✅ Unlimited notebooks</li>
+              <li>✅ All dashboard templates in the Marketplace</li>
+              <li>✅ All widgets (Pomodoro, Mood Tracker, Quick Notes, Photos & more)</li>
+            </ul>
+          </div>
+          <button class="btn btn-premium" @click="contactUpgrade">Get Premium</button>
+        </div>
+      </section>
+
+      
       <div v-if="showEdit" class="modal-overlay">
         <div class="modal-card">
           <h5>Edit Profile</h5>
           <input class="form-control mb-2" v-model="user.full_name" placeholder="Full Name">
           <input class="form-control mb-2" v-model="user.email" placeholder="Email">
 
-          <!-- Profile Picture Upload -->
+          
           <input type="file" class="form-control mb-3" @change="uploadAvatar">
 
           <button class="btn btn-primary mb-2" @click="saveProfile">Save</button>
@@ -71,7 +96,7 @@
         </div>
       </div>
 
-      <!-- Change Password Modal -->
+      
       <div v-if="showPassword" class="modal-overlay">
         <div class="modal-card">
           <h5>Change Password</h5>
@@ -86,11 +111,18 @@
 </template>
 
 <script>
+import { useCartStore } from '../stores/cart'
+
 export default {
+  setup() {
+    const cart = useCartStore()
+    return { cart }
+  },
   data() {
     return {
       user:null,
       showEdit: false,
+      isPremium: false,
       showPassword: false,
       newPassword: '',
       confirmPassword: '',
@@ -115,6 +147,7 @@ export default {
         if (response.ok){
           this.user = data
           await this.loadUsageStats()
+          await this.loadSubscriptionStatus()
         }else{
           this.$router.push({ name: 'Login'})
         }
@@ -181,10 +214,25 @@ export default {
         this.stats.focusStreakDays = Math.max(1, this.stats.focusStreakDays)
       }
     },
+    async loadSubscriptionStatus() {
+      try {
+        const res = await fetch(`${this.getApiBaseUrl()}/api/templates/entitlements`, {
+          headers: { Authorization: this.getAuthHeaders().Authorization }
+        })
+        const data = await this.parseJson(res)
+        this.isPremium = !!data.hasActiveSubscription
+      } catch {
+        this.isPremium = false
+      }
+    },
     uploadAvatar(event) {
       const file = event.target.files[0]
       if (file) {
-        this.user.avatar = URL.createObjectURL(file)
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          this.user.avatar = e?.target?.result || ''
+        }
+        reader.readAsDataURL(file)
       }
     },
 
@@ -200,11 +248,13 @@ export default {
           alert("Profile updated successfully!")
           this.showEdit = false
         }else{
-          alert("Failed to update profile")
+          const data = await response.json().catch(() => ({}))
+          alert(data.error || data.message || "Failed to update profile")
         }
 
       }catch(err){
-        console.log("Update error")
+        console.log("Update error", err)
+        alert("Failed to update profile")
       } 
     },
 
@@ -217,6 +267,17 @@ export default {
       } else {
         alert("Passwords do not match.")
       }
+    },
+    contactUpgrade() {
+      this.cart.addItem({
+        id: 'premium-monthly',
+        cartKey: 'premium_subscription:premium-monthly',
+        type: 'premium_subscription',
+        title: 'Premium Plan (Monthly)',
+        price: 149,
+        image: ''
+      })
+      this.$router.push('/checkout')
     },
     logout() {
       localStorage.removeItem('token')
@@ -369,7 +430,6 @@ export default {
   transform: translateY(-1px);
 }
 
-/* Modals */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0;
@@ -413,4 +473,99 @@ export default {
     justify-content: center;
   }
 }
+.plan-panel {
+  background: var(--dash-card, rgba(255,255,255,0.92));
+  border: 1px solid var(--dash-border, #dbe3ff);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 26px rgba(36, 56, 122, 0.1);
+}
+
+.plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.plan-header h5 {
+  margin: 0 0 6px;
+}
+
+.plan-header p {
+  margin: 0;
+  color: var(--n-text-muted, #647096);
+}
+
+.plan-badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.badge-free {
+  background: #f0f0f0;
+  color: #555;
+  border: 1px solid #ddd;
+}
+
+.badge-premium {
+  background: linear-gradient(135deg, #f0c060, #e8a020);
+  color: #5a3800;
+  border: 1px solid #d4931a;
+}
+
+.plan-upgrade {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--dash-border, #dbe3ff);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.upgrade-features .feature-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--dash-title, #253629);
+}
+
+.upgrade-features ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upgrade-features li {
+  font-size: 0.92rem;
+  color: var(--n-text-muted, #647096);
+}
+
+.btn-premium {
+  background: linear-gradient(135deg, #f0c060, #e8a020);
+  color: #5a3800;
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(224, 152, 0, 0.3);
+}
+
+.btn-premium:hover {
+  background: linear-gradient(135deg, #e8b020, #c87800);
+  transform: translateY(-1px);
+}
 </style>
+
+

@@ -1,89 +1,99 @@
 <template>
-  <div class="widget-card">
-    <div class="header">
-      <h5 class="title">Study Session Log</h5>
-      <span class="meta">{{ totalMinutes }} min</span>
+  <div class="widget">
+    <div class="widget-header">
+      <div class="header-left">
+        <span class="widget-icon">⧖</span>
+        <h5 class="widget-title">Study Log</h5>
+      </div>
+      <div class="total-pill">{{ totalHours }}h {{ totalRemMins }}m total</div>
     </div>
 
-    <div class="add-row">
-      <input v-model="form.topic" placeholder="Topic" />
-      <input v-model.number="form.minutes" type="number" min="1" placeholder="Minutes" />
-      <button class="btn-add" @click="addSession">Log</button>
-    </div>
-
-    <ul class="items" v-if="sessions.length">
-      <li v-for="(item, index) in sessions" :key="index">
-        <div class="text">
-          <strong>{{ item.topic }}</strong>
-          <small>{{ item.minutes }} min · {{ item.date }}</small>
+    <div class="log-form">
+      <input v-model="form.topic" placeholder="What did you study?" class="field" @keyup.enter="addSession" />
+      <div class="form-row">
+        <div class="mins-input">
+          <input v-model.number="form.minutes" type="number" min="1" placeholder="25" class="field" />
+          <span class="field-unit">min</span>
         </div>
-        <button class="btn-remove" @click="remove(index)">x</button>
-      </li>
-    </ul>
-    <p v-else class="empty">No sessions logged.</p>
+        <button class="log-btn" @click="addSession">Log</button>
+      </div>
+    </div>
+
+    <div class="sessions" v-if="sessions.length">
+      <div class="session-item" v-for="(s, i) in sessions" :key="i">
+        <div class="session-bar-wrap">
+          <div class="session-bar" :style="{ width: Math.min((s.minutes / maxMinutes) * 100, 100) + '%' }"></div>
+        </div>
+        <div class="session-info">
+          <span class="session-topic">{{ s.topic }}</span>
+          <div class="session-meta">
+            <span class="session-mins">{{ s.minutes }}m</span>
+            <span class="session-date">{{ s.date }}</span>
+          </div>
+        </div>
+        <button class="remove-btn" @click="sessions.splice(i, 1)">✕</button>
+      </div>
+    </div>
+
+    <div v-else class="empty-state">No sessions logged yet</div>
   </div>
 </template>
 
 <script>
 export default {
-  props: {
-    data: {
-      type: Array,
-      default: () => []
-    }
-  },
+  props: { data: { type: Array, default: () => [] } },
   emits: ['update:data'],
   data() {
-    return {
-      sessions: Array.isArray(this.data) ? [...this.data] : [],
-      form: { topic: '', minutes: 25 }
-    }
+    return { sessions: Array.isArray(this.data) ? [...this.data] : [], form: { topic: '', minutes: 25 } }
   },
   computed: {
-    totalMinutes() {
-      return this.sessions.reduce((sum, s) => sum + Number(s.minutes || 0), 0)
-    }
+    totalMinutes() { return this.sessions.reduce((s, x) => s + Number(x.minutes || 0), 0) },
+    totalHours() { return Math.floor(this.totalMinutes / 60) },
+    totalRemMins() { return this.totalMinutes % 60 },
+    maxMinutes() { return Math.max(...this.sessions.map(s => s.minutes), 1) }
   },
   watch: {
-    data: {
-      handler(value) {
-        this.sessions = Array.isArray(value) ? [...value] : []
-      },
-      deep: true
-    },
-    sessions: {
-      handler(value) {
-        this.$emit('update:data', value)
-      },
-      deep: true
-    }
+    data: { handler(v) { this.sessions = Array.isArray(v) ? [...v] : [] }, deep: true },
+    sessions: { handler(v) { this.$emit('update:data', v) }, deep: true }
   },
   methods: {
     addSession() {
       if (!this.form.topic.trim() || !this.form.minutes) return
-      this.sessions.unshift({
-        topic: this.form.topic.trim(),
-        minutes: Number(this.form.minutes),
-        date: new Date().toLocaleDateString()
-      })
+      this.sessions.unshift({ topic: this.form.topic.trim(), minutes: Number(this.form.minutes), date: new Date().toLocaleDateString('en', { month: 'short', day: 'numeric' }) })
       this.form = { topic: '', minutes: 25 }
-    },
-    remove(index) {
-      this.sessions.splice(index, 1)
     }
   }
 }
 </script>
 
 <style scoped>
-.header, .add-row, li { display: flex; gap: 8px; align-items: center; }
-.header { justify-content: space-between; margin-bottom: 8px; }
-.title { margin: 0; font-size: 15px; color: #37352f; }
-.meta { font-size: 12px; color: #6f6b64; }
-.add-row { margin-bottom: 10px; flex-wrap: wrap; }
-input { border: 1px solid #ddd8d0; border-radius: 6px; padding: 6px 8px; background: #fbfaf8; color: #37352f; }
-.btn-add, .btn-remove { border: 1px solid #ddd8d0; background: #f7f5f2; border-radius: 6px; color: #37352f; padding: 6px 8px; }
-.items { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
-.text { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-.empty { margin: 0; color: #8a867e; font-size: 13px; }
+.widget { background: #fff; border-radius: 16px; padding: 20px; border: 1px solid #eeecea; display: flex; flex-direction: column; gap: 14px; font-family: 'DM Sans', 'Helvetica Neue', sans-serif; height: 100%; box-sizing: border-box; }
+.widget-header { display: flex; align-items: center; justify-content: space-between; }
+.header-left { display: flex; align-items: center; gap: 8px; }
+.widget-icon { width: 26px; height: 26px; background: #eef2ff; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #5060a0; }
+.widget-title { margin: 0; font-size: 14px; font-weight: 600; color: #1a1917; letter-spacing: -0.01em; }
+.total-pill { font-size: 11px; font-weight: 600; color: #8a867e; background: #f5f4f1; padding: 3px 9px; border-radius: 99px; }
+.log-form { display: flex; flex-direction: column; gap: 6px; }
+.field { padding: 8px 11px; border: 1.5px solid #eeecea; border-radius: 9px; font-size: 13px; color: #2e2c29; background: #faf9f7; outline: none; transition: border-color 0.15s; width: 100%; box-sizing: border-box; }
+.field:focus { border-color: #3d3a35; background: #fff; }
+.field::placeholder { color: #c0bbb5; }
+.form-row { display: flex; gap: 6px; align-items: center; }
+.mins-input { position: relative; flex: 1; }
+.mins-input .field { padding-right: 36px; }
+.field-unit { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #b0aba3; font-weight: 500; pointer-events: none; }
+.log-btn { padding: 8px 18px; background: #3d3a35; color: #fff; border: none; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+.log-btn:hover { background: #2a2823; }
+.sessions { display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; }
+.session-item { display: flex; flex-direction: column; gap: 5px; }
+.session-bar-wrap { height: 4px; background: #f0ede8; border-radius: 99px; overflow: hidden; }
+.session-bar { height: 100%; background: linear-gradient(90deg, #5060a0, #7080d0); border-radius: 99px; transition: width 0.4s ease; }
+.session-info { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.session-topic { font-size: 13px; font-weight: 500; color: #2e2c29; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.session-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.session-mins { font-size: 12px; font-weight: 700; color: #5060a0; }
+.session-date { font-size: 11px; color: #b0aba3; }
+.remove-btn { border: none; background: none; color: #c9c5bf; cursor: pointer; font-size: 10px; padding: 0; opacity: 0; transition: all 0.15s; }
+.session-item:hover .remove-btn { opacity: 1; }
+.remove-btn:hover { color: #b05050; }
+.empty-state { flex: 1; display: flex; align-items: center; justify-content: center; color: #c0bbb5; font-size: 13px; }
 </style>

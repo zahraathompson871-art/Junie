@@ -1,13 +1,5 @@
 import {pool} from "../config/db.js";
-
-const safeParse = (value) => {
-    if (typeof value !== "string") return value || {};
-    try {
-        return JSON.parse(value);
-    } catch {
-        return {};
-    }
-};
+import { encodeNotebookContent, decodeNotebookContent } from "../utils/notebookCrypto.js";
 
 const withBlockPositionColumn = async (onWithPosition, onWithoutPosition) => {
     try {
@@ -35,14 +27,14 @@ export const createBlock = async ({pageId, type, content, position = 0, ownerId}
         async () => {
             const [rows] = await pool.query(
                 "INSERT INTO blocks (page_id, type, content, position) VALUES (?, ?, ?, ?)",
-                [pageId, type, JSON.stringify(content), position]
+                [pageId, type, encodeNotebookContent(content), position]
             );
             return rows;
         },
         async () => {
             const [rows] = await pool.query(
                 "INSERT INTO blocks (page_id, type, content) VALUES (?, ?, ?)",
-                [pageId, type, JSON.stringify(content)]
+                [pageId, type, encodeNotebookContent(content)]
             );
             return rows;
         }
@@ -79,7 +71,7 @@ export const getBlocksByPage = async (pageId, ownerId) => {
             return r;
         }
     );
-    return rows.map(row => ({ ...row, content: safeParse(row.content) }));
+    return rows.map(row => ({ ...row, content: decodeNotebookContent(row.content) }));
 };
 
 export const getBlockById = async (id, ownerId) => {
@@ -94,7 +86,7 @@ export const getBlockById = async (id, ownerId) => {
     );
     const block = rows[0];
     if (!block) return null;
-    return { ...block, content: safeParse(block.content) };
+    return { ...block, content: decodeNotebookContent(block.content) };
 };
 
 export const updateBlock = async (id, updates, ownerId) => {
@@ -108,7 +100,7 @@ export const updateBlock = async (id, updates, ownerId) => {
                  JOIN workspaces w ON w.id = b.workspace_id
                  SET bl.type = ?, bl.content = ?, bl.position = ?
                  WHERE bl.id = ? AND w.owner_id = ?`,
-                [type, JSON.stringify(content), position, id, ownerId]
+                [type, encodeNotebookContent(content), position, id, ownerId]
             );
         },
         async () => {
@@ -119,7 +111,7 @@ export const updateBlock = async (id, updates, ownerId) => {
                  JOIN workspaces w ON w.id = b.workspace_id
                  SET bl.type = ?, bl.content = ?
                  WHERE bl.id = ? AND w.owner_id = ?`,
-                [type, JSON.stringify(content), id, ownerId]
+                [type, encodeNotebookContent(content), id, ownerId]
             );
         }
     );

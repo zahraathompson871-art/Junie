@@ -2,11 +2,6 @@
   <footer class="site-footer">
     <div class="container footer-inner">
       <div class="footer-brand">Junie</div>
-      <div class="footer-links">
-        <router-link to="/marketplace">Marketplace</router-link>
-        <router-link to="/dashboard">Dashboard</router-link>
-        <router-link to="/profile">Profile</router-link>
-      </div>
       <div class="footer-copy">&copy; {{ year }} Junie. All rights reserved.</div>
     </div>
   </footer>
@@ -45,21 +40,6 @@ export default {
   font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
   font-weight: 700;
   color: #1f2b54;
-}
-
-.footer-links {
-  display: flex;
-  gap: 12px;
-}
-
-.footer-links a {
-  color: #5f6c95;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.footer-links a:hover {
-  color: #3e58b8;
 }
 
 .footer-copy {

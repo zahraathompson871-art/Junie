@@ -43,7 +43,7 @@ const builtInTemplates = [
       { type: 'mood_tracker', data: [], size: 4, rows: 1 },
       { type: 'study_session_log', data: [], size: 4, rows: 2 },
       { type: 'pomodoro', data: {}, size: 4, rows: 1 },
-      { type: 'picture', data: { src: '' }, size: 6, rows: 2 }
+      { type: 'picture', data: { src: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1200&q=80&auto=format&fit=crop' }, size: 6, rows: 2 }
     ]
   },
   {
@@ -80,7 +80,7 @@ const builtInTemplates = [
       { type: 'quick_notes', data: [], size: 6, rows: 2 },
       { type: 'todo', data: [], size: 4, rows: 1 },
       { type: 'mood_tracker', data: [], size: 4, rows: 1 },
-      { type: 'picture', data: { src: '' }, size: 4, rows: 2 }
+      { type: 'picture', data: { src: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80&auto=format&fit=crop' }, size: 4, rows: 2 }
     ]
   },
   {

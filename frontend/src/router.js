@@ -1,6 +1,4 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-
-// Views
 import Home from './views/Home.vue'
 import Login from './views/Login.vue'
 import SignUp from './views/SignUp.vue'
@@ -8,7 +6,6 @@ import Marketplace from './views/Marketplace.vue'
 import Dashboard from './views/Dashboard.vue'
 import Profile from './views/Profile.vue'
 import CreateAccount from './views/CreateAccount.vue'
-import Cart from './views/Cart.vue'
 import Checkout from './views/Checkout.vue'
 import ThankYou from './views/ThankYou.vue'
 import Notebooks from './views/Notebooks.vue'
@@ -21,7 +18,7 @@ const routes = [
   { path: '/dashboard', name: 'Dashboard', component: Dashboard },
   { path: '/marketplace', name: 'Marketplace', component: Marketplace },
   { path: '/profile', name: 'Profile', component: Profile },
-  { path: '/cart', name: 'Cart', component: Cart },
+  { path: '/cart', redirect: '/checkout' },
   { path: '/checkout', name: 'Checkout', component: Checkout },
   { path: '/thankyou', name: 'ThankYou', component: ThankYou }
   ,{ path: '/notebooks', name: 'Notebooks', component: Notebooks }
@@ -37,7 +34,7 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
 
   const protectedRoutes = [
-    'Dashboard', 'Marketplace', 'Profile', 'Cart', 'Checkout', 'ThankYou', 'Notebooks'
+    'Dashboard', 'Marketplace', 'Profile', 'Checkout', 'ThankYou', 'Notebooks'
   ]
 
   if (protectedRoutes.includes(to.name) && !token) {
@@ -48,3 +45,4 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+

@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+
+:root {
+  --n-bg: #f4f7ff;
+  --n-surface: rgba(255, 255, 255, 0.9);
+  --n-surface-soft: #f8faff;
+  --n-text: #171d35;
+  --n-text-muted: #647096;
+  --n-border: #dbe3ff;
+  --n-border-strong: #c4d1ff;
+  --n-accent: #4a6cff;
+  --n-accent-2: #18c6b8;
+  --n-hover: #eef3ff;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #f8faff 0%, #f3f7ff 45%, #eef4ff 100%);
+  color: var(--n-text);
+  font-family: "Plus Jakarta Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(74, 108, 255, 0.09) 0%, transparent 32%),
+    radial-gradient(circle at 88% 14%, rgba(24, 198, 184, 0.07) 0%, transparent 26%);
+  z-index: -1;
+}
+
+.main {
+  background: transparent;
+  color: var(--n-text);
+}
+
+.text-glow {
+  color: var(--n-text);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
+}
+
+.container {
+  max-width: 1120px;
+}
+
+.card,
+.widget-card {
+  background: var(--n-surface);
+  border: 1px solid var(--n-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(46, 67, 138, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.btn-glow {
+  background: linear-gradient(135deg, var(--n-accent), #6f86ff);
+  border: none;
+  color: #fff;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.btn-glow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(74, 108, 255, 0.35);
+  color: #fff;
+}
+
+.btn-glow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 108, 255, 0.2), 0 10px 24px rgba(74, 108, 255, 0.24);
+}
+
+.form-control,
+input,
+textarea,
+select {
+  background: var(--n-surface-soft);
+  border: 1px solid var(--n-border);
+  color: var(--n-text);
+  border-radius: 12px;
+}
+
+.form-control:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #9eb2ff;
+  box-shadow: 0 0 0 3px rgba(74, 108, 255, 0.16);
+}
+
+.text-muted,
+p,
+small {
+  color: var(--n-text-muted);
+}
+
+a {
+  color: inherit;
+}
+
+a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 108, 255, 0.16);
+  border-radius: 8px;
+}
