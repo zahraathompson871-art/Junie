@@ -54,7 +54,7 @@
             <div @click="addWidget('mood_tracker')" :class="{ 'locked-item': !isPremium }">Mood Tracker {{ !isPremium ? '🔒' : '' }}</div>
             <div @click="addWidget('quick_notes')" :class="{ 'locked-item': !isPremium }">Quick Notes {{ !isPremium ? '🔒' : '' }}</div>
             <div @click="addWidget('picture')" :class="{ 'locked-item': !isPremium }">Photos {{ !isPremium ? '🔒' : '' }}</div>
-            <div v-if="!isPremium" class="upgrade-menu-hint" @click="$router.push('/checkout')">Upgrade to Premium</div>
+            <div v-if="!isPremium" class="upgrade-menu-hint" @click="upgradeToPremium">Upgrade to Premium</div>
           </div>
         </div>
       </div>
@@ -94,6 +94,7 @@
 
 <script>
 import draggable from 'vuedraggable'
+import { useCartStore } from '../stores/cart'
 import ToDoWidget from '../components/widgets/toDoWidget.vue'
 import GoalWidget from '../components/widgets/goalWidget.vue'
 import PomodoroWidget from '../components/widgets/pomodoroWidget.vue'
@@ -194,6 +195,19 @@ export default {
     await this.loadDashboard()
   },
   methods: {
+    getCurrentUserId() {
+      const token = this.getToken()
+      if (!token) return 'guest'
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1] || ''))
+        return String(payload.id || payload.userId || payload.sub || 'guest')
+      } catch {
+        return 'guest'
+      }
+    },
+    getHeaderImageStorageKey() {
+      return `dashboardHeaderImage:${this.getCurrentUserId()}`
+    },
     getApiBaseUrl() {
       return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
     },
@@ -299,8 +313,9 @@ export default {
       } else {
         this.customTheme = null
       }
-      const savedImage = localStorage.getItem('dashboardHeaderImage');
+      const savedImage = localStorage.getItem(this.getHeaderImageStorageKey());
       if (savedImage) this.headerImage = savedImage;
+      else this.headerImage = null
     },
     onImageUpload(event) {
       const file = event.target.files[0]
@@ -308,13 +323,13 @@ export default {
       const reader = new FileReader()
       reader.onload = e => {
         this.headerImage = e.target.result
-        localStorage.setItem('dashboardHeaderImage', this.headerImage)
+        localStorage.setItem(this.getHeaderImageStorageKey(), this.headerImage)
       }
       reader.readAsDataURL(file)
     },
     removeHeaderImage() {
       this.headerImage = null
-      localStorage.removeItem('dashboardHeaderImage')
+      localStorage.removeItem(this.getHeaderImageStorageKey())
     },
     toggleMenu() { this.showMenu = !this.showMenu },
     async loadSubscriptionStatus() {
@@ -358,6 +373,18 @@ export default {
         data: nextData
       }
       this.saveDashboardDebounced()
+    },
+    upgradeToPremium() {
+      const cart = useCartStore()
+      cart.addItem({
+        id: 'premium-monthly',
+        cartKey: 'premium_subscription:premium-monthly',
+        type: 'premium_subscription',
+        title: 'Premium Plan (Monthly)',
+        price: 149,
+        image: ''
+      })
+      this.$router.push('/checkout')
     },
     resolveWidget(type) {
       const map = {

@@ -41,7 +41,7 @@
             <button class="clear-btn" :disabled="!canCreateMore" @click="createNotebook()">
               {{ canCreateMore ? 'New Notebook' : 'Limit Reached' }}
             </button>
-            <button v-if="!entitlement.isUnlimited" class="action-btn" @click="$router.push('/checkout')">Upgrade to Premium</button>
+            <button v-if="!entitlement.isUnlimited" class="action-btn" @click="upgradeToPremium">Upgrade to Premium</button>
           </div>
         </div>
 
@@ -137,7 +137,13 @@
 </template>
 
 <script>
+import { useCartStore } from '../stores/cart'
+
 export default {
+  setup() {
+    const cart = useCartStore()
+    return { cart }
+  },
   data() {
     return {
       searchQuery: '',
@@ -229,6 +235,17 @@ export default {
     await this.bootstrap()
   },
   methods: {
+    upgradeToPremium() {
+      this.cart.addItem({
+        id: 'premium-monthly',
+        cartKey: 'premium_subscription:premium-monthly',
+        type: 'premium_subscription',
+        title: 'Premium Plan (Monthly)',
+        price: 149,
+        image: ''
+      })
+      this.$router.push('/checkout')
+    },
     getApiBaseUrl() {
       return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
     },

@@ -135,7 +135,13 @@
 </template>
 
 <script>
+import { useCartStore } from '../stores/cart'
+
 export default {
+  setup() {
+    const cart = useCartStore()
+    return { cart }
+  },
   data() {
     return {
       templates: [],
@@ -275,6 +281,14 @@ export default {
       }
     },
     upgradeToPremium() {
+      this.cart.addItem({
+        id: 'premium-monthly',
+        cartKey: 'premium_subscription:premium-monthly',
+        type: 'premium_subscription',
+        title: 'Premium Plan (Monthly)',
+        price: 149,
+        image: ''
+      })
       this.$router.push('/checkout')
     }
   }
