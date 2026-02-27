@@ -311,7 +311,7 @@ export default {
 .add-btn:hover { transform:translateY(-3px) scale(1.04); filter:brightness(1.05);}
 .add-menu { margin-top:12px; background:rgba(255,255,255,0.96); border-radius:18px; padding:10px; border:1px solid var(--dash-border); box-shadow:0 18px 40px rgba(0,0,0,0.12); width:230px; backdrop-filter:blur(10px); z-index:10;}
 .add-menu div { padding:9px 10px; border-radius:8px; cursor:pointer; transition:0.2s ease; }
-.menu-label { font-size:11px; font-weight:800; color:var(--dash-accent); text-transform:uppercase; letter-spacing:0.6px; margin-top:6px; }
+.menu-label { font-size:12px; font-weight:800; color:var(--dash-accent); text-transform:uppercase; letter-spacing:0.6px; margin-top:6px; }
 .add-menu div:hover { background: color-mix(in srgb,var(--dash-accent) 12%,#fff); }
 .resize-handle-left, .resize-handle-bottom { opacity:0; transition:opacity 0.2s ease;}
 .widget-shell:hover .resize-handle-left, .widget-shell:hover .resize-handle-bottom { opacity:0.8;}
