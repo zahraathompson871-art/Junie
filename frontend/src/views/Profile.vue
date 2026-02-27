@@ -46,7 +46,7 @@
         </div>
       </section>
 
-      <section class="account-panel" data-tour="profile-settings">
+      <section class="account-panel">
         <h5>Account Settings</h5>
         <p>Manage your profile details and keep your account secure.</p>
         <div class="settings-actions">
@@ -567,5 +567,6 @@ export default {
   transform: translateY(-1px);
 }
 </style>
+
 
 

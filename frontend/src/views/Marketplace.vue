@@ -11,7 +11,7 @@
       <p v-if="error" class="text-danger">{{ error }}</p>
       <p v-if="success" class="text-success">{{ success }}</p>
 
-      <div class="row g-4" data-tour="marketplace-grid">
+      <div class="row g-4">
         <div class="col-md-4" v-for="template in templates" :key="template.id">
           <div class="product-card">
             <div class="product-image">
@@ -704,3 +704,4 @@ export default {
 .mount-a { left: 8px; }
 .mount-b { left: 22px; width: 14px; height: 14px; background: color-mix(in srgb, var(--widget-accent) 55%, #fff); }
 </style>
+

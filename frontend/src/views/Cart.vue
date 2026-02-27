@@ -1,7 +1,7 @@
 <template>
   <div class="main">
     <div class="container mt-4">
-      <div class="cart-block" data-tour="cart-summary">
+      <div class="cart-block">
         <h2 class="text-glow mb-4">Your Cart</h2>
 
         
@@ -128,5 +128,6 @@ export default {
 }
 
 </style>
+
 
 

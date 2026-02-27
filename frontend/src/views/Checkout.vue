@@ -1,5 +1,5 @@
 <template>
-  <div class="checkout-block" data-tour="checkout-summary">
+  <div class="checkout-block">
     <h2 class="text-glow">Checkout</h2>
     <form class="checkout-form">
       <div class="form-group">
@@ -204,3 +204,4 @@ li {
   font-weight: 600;
 }
 </style>
+

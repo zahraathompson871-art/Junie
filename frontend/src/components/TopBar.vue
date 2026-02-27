@@ -1,7 +1,7 @@
 <template>
   <nav class="topbar">
     <div class="topbar-left">
-      <router-link to="/" class="brand-name" data-tour="brand">Junie</router-link>
+      <router-link to="/" class="brand-name">Junie</router-link>
     </div>
 
     <div class="topbar-right">
@@ -11,20 +11,11 @@
       </ul>
 
       <ul v-else class="nav-links">
-        <li><router-link to="/dashboard" class="nav-link" data-tour="nav-dashboard">Dashboard</router-link></li>
-        <li><router-link to="/notebooks" class="nav-link" data-tour="nav-notebooks">Notebooks</router-link></li>
-        <li><router-link to="/marketplace" class="nav-link" data-tour="nav-marketplace">Marketplace</router-link></li>
+        <li><router-link to="/dashboard" class="nav-link">Dashboard</router-link></li>
+        <li><router-link to="/notebooks" class="nav-link">Notebooks</router-link></li>
+        <li><router-link to="/marketplace" class="nav-link">Marketplace</router-link></li>
         <li class="profile-cart">
-          <button
-            v-if="isNewUser"
-            class="tour-btn"
-            type="button"
-            @click="openTour"
-            data-tour="tour-trigger"
-          >
-            Tour
-          </button>
-          <router-link to="/profile" class="nav-link" data-tour="nav-profile">Profile</router-link>
+          <router-link to="/profile" class="nav-link">Profile</router-link>
         </li>
       </ul>
     </div>
@@ -36,16 +27,6 @@ export default {
   computed: {
     isHomePage() {
       return this.$route?.name === 'Home'
-    },
-    isNewUser() {
-      const token = localStorage.getItem('token')
-      const completed = localStorage.getItem('junieOnboardingCompleted') === '1'
-      return !!token && !completed
-    }
-  },
-  methods: {
-    openTour() {
-      window.dispatchEvent(new Event('open-onboarding-tour'))
     }
   }
 }
@@ -114,25 +95,10 @@ export default {
   align-items: center;
 }
 
-.tour-btn {
-  margin-left: 0.75rem;
-  border: 1px solid #ccdbff;
-  background: #eef4ff;
-  color: #2f457f;
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.tour-btn:hover {
-  background: #e7efff;
-}
-
 @media (max-width: 900px) {
   .topbar {
     flex-wrap: wrap;
   }
 }
 </style>
+

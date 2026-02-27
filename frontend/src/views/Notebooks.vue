@@ -34,7 +34,7 @@
           </button>
         </section>
 
-        <div class="section-row all-docs" data-tour="notebooks-actions">
+        <div class="section-row all-docs">
           <h3>All Documents</h3>
           <div class="notebook-actions">
             <span class="limit-pill">{{ notebookLimitLabel }}</span>
@@ -1108,3 +1108,4 @@ export default {
   .window-top { grid-template-columns: 1fr; text-align: center; }
 }
 </style>
+

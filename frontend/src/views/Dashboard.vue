@@ -2,7 +2,7 @@
   <div class="main" :class="`theme-${currentThemeKey}`" :style="themeStyle">
     <div class="container mt-4">
 
-      <div class="header-section mb-4" data-tour="dashboard-header">
+      <div class="header-section mb-4">
         <div class="header-image-wrapper">
           <img
             v-if="headerImage"
@@ -38,7 +38,7 @@
         <h2 class="dashboard-title">My Dashboard</h2>
       </div>
 
-      <div class="toolbar mb-4" data-tour="dashboard-add-widget">
+      <div class="toolbar mb-4">
         <div class="add-widget">
           <button @click="toggleMenu" class="add-btn">+ Add Block</button>
           <div v-if="showMenu" class="add-menu" @click.stop>
@@ -66,7 +66,7 @@
         item-key="id"
         class="widgets-grid"
         ghost-class="ghost"
-        data-tour="dashboard-widgets-grid"
+       
         @end="saveDashboardDebounced"
       >
         <template #item="{ element, index }">
@@ -567,3 +567,4 @@ export default {
 .ghost { opacity:0.4;}
 @keyframes fadeUp { from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
 </style>
+
