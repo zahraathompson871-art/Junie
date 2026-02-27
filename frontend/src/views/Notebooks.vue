@@ -37,7 +37,14 @@
 
         <div class="section-row all-docs">
           <h3>All Documents</h3>
-          <button class="clear-btn" @click="createNotebook()">New Notebook</button>
+          <div class="notebook-actions">
+            <span class="limit-pill">{{ notebookLimitLabel }}</span>
+            <button class="clear-btn" :disabled="!canCreateMore" @click="createNotebook()">
+              {{ canCreateMore ? 'New Notebook' : 'Limit Reached' }}
+            </button>
+            <button class="clear-btn" @click="addNotebookSlotToCart">Buy +1 Notebook</button>
+            <button class="action-btn" @click="addUnlimitedToCart">Get Unlimited</button>
+          </div>
         </div>
 
         <section class="book-grid">
@@ -133,7 +140,13 @@
 </template>
 
 <script>
+import { useCartStore } from '../stores/cart'
+
 export default {
+  setup() {
+    const cart = useCartStore()
+    return { cart }
+  },
   data() {
     return {
       searchQuery: '',
@@ -160,6 +173,14 @@ export default {
       isLoadingLibrary: false,
       isOpeningBook: false,
       isLoadingPage: false,
+      entitlement: {
+        used: 0,
+        baseLimit: 1,
+        extraSlots: 0,
+        isUnlimited: false,
+        totalLimit: 1,
+        remaining: 1
+      },
       toast: {
         visible: false,
         message: '',
@@ -189,6 +210,16 @@ export default {
     selectedBookTitle() {
       const book = this.books.find(b => Number(b.id) === Number(this.selectedBookId))
       return book?.title || 'Notebook'
+    },
+    canCreateMore() {
+      if (this.entitlement.isUnlimited) return true
+      return Number(this.entitlement.remaining || 0) > 0
+    },
+    notebookLimitLabel() {
+      if (this.entitlement.isUnlimited) {
+        return `Plan: Unlimited | ${this.entitlement.used} notebooks`
+      }
+      return `Free Plan: ${this.entitlement.used}/${this.entitlement.totalLimit} notebooks`
     },
     bookThemeVars() {
       const book = this.books.find(b => Number(b.id) === Number(this.selectedBookId))
@@ -273,7 +304,21 @@ export default {
       await this.loadWorkspaces()
       if (!this.workspaces.length) await this.createDefaultWorkspace()
       if (this.workspaces.length) await this.selectWorkspace(this.workspaces[0].id)
+      await this.loadNotebookEntitlement()
       this.isLoadingLibrary = false
+    },
+    async loadNotebookEntitlement() {
+      const res = await fetch(`${this.getApiBaseUrl()}/api/books/entitlements/me`, { headers: this.authHeaders() })
+      const data = await this.parseJson(res)
+      if (!res.ok) return
+      this.entitlement = {
+        used: Number(data.used || 0),
+        baseLimit: Number(data.baseLimit || 1),
+        extraSlots: Number(data.extraSlots || 0),
+        isUnlimited: Boolean(data.isUnlimited),
+        totalLimit: data.totalLimit === null ? null : Number(data.totalLimit || 1),
+        remaining: data.remaining === null ? null : Number(data.remaining || 0)
+      }
     },
     async createDefaultWorkspace() {
       const res = await fetch(`${this.getApiBaseUrl()}/api/workspaces`, {
@@ -300,7 +345,7 @@ export default {
       this.pages = []
       this.blocks = []
       await this.loadBooks(id)
-      if (!this.books.length) await this.seedDemoBooks()
+      await this.loadNotebookEntitlement()
     },
     async loadBooks(workspaceId) {
       const res = await fetch(`${this.getApiBaseUrl()}/api/books/workspace/${workspaceId}`, { headers: this.authHeaders() })
@@ -337,7 +382,7 @@ export default {
     },
     async createNotebook(title = '') {
       if (!this.selectedWorkspaceId) return
-      const baseTitle = title || `Notebook ${this.books.length + 1}`
+      const baseTitle = title?.trim() || this.getNextNotebookTitle()
       const res = await fetch(`${this.getApiBaseUrl()}/api/books`, {
         method: 'POST',
         headers: this.authHeaders(),
@@ -345,22 +390,52 @@ export default {
       })
       const data = await this.parseJson(res)
       if (!res.ok) {
-        this.error = data.error || 'Failed to create notebook'
+        if (data?.code === 'NOTEBOOK_LIMIT_REACHED') {
+          this.error = data.error || 'Notebook limit reached'
+          if (data.entitlement) this.entitlement = data.entitlement
+          this.notify('Free plan limit reached. Buy +1 notebook or unlock unlimited.', 'error')
+        } else {
+          this.error = data.error || 'Failed to create notebook'
+        }
         return null
       }
       await this.loadBooks(this.selectedWorkspaceId)
+      await this.loadNotebookEntitlement()
       this.notify('Notebook created')
       return data
     },
-    async seedDemoBooks() {
-      const seededKey = `notebookSeededWorkspace:${this.selectedWorkspaceId}`
-      if (localStorage.getItem(seededKey) === '1') return
-      const demoTitles = ['Chemistry 101', 'Homework', 'Maths', 'Biology', 'English Writing', 'Piano Notebook']
-      for (const title of demoTitles) {
-        await this.createNotebook(title)
-      }
-      localStorage.setItem(seededKey, '1')
-      await this.loadBooks(this.selectedWorkspaceId)
+    addNotebookSlotToCart() {
+      this.cart.addItem({
+        id: 'slot-1',
+        cartKey: 'notebook_slot:slot-1',
+        type: 'notebook_slot',
+        title: 'Notebook Slot (+1)',
+        price: 39,
+        image: ''
+      })
+      this.$router.push('/cart')
+    },
+    addUnlimitedToCart() {
+      this.cart.addItem({
+        id: 'unlimited',
+        cartKey: 'notebook_unlimited:unlimited',
+        type: 'notebook_unlimited',
+        title: 'Unlimited Notebooks',
+        price: 199,
+        image: ''
+      })
+      this.$router.push('/cart')
+    },
+    getNextNotebookTitle() {
+      const usedNumbers = this.books
+        .map(book => {
+          const match = String(book?.title || '').match(/^Notebook\s+(\d+)$/i)
+          return match ? Number(match[1]) : null
+        })
+        .filter(n => Number.isFinite(n) && n > 0)
+
+      const max = usedNumbers.length ? Math.max(...usedNumbers) : 0
+      return `Notebook ${max + 1}`
     },
     async loadPages(bookId) {
       const res = await fetch(`${this.getApiBaseUrl()}/api/pages/book/${bookId}`, { headers: this.authHeaders() })
@@ -651,6 +726,23 @@ export default {
   margin-top: 20px;
 }
 
+.notebook-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.limit-pill {
+  border: 1px solid var(--dash-border, #d5e5cf);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dash-accent, #6f8f63) 10%, #fff);
+  color: var(--dash-title, #253629);
+  font-weight: 700;
+  padding: 6px 10px;
+  font-size: 0.86rem;
+}
+
 .clear-btn {
   border: 1px solid var(--dash-border, #d5e5cf);
   background: #fff;
@@ -662,6 +754,11 @@ export default {
 
 .clear-btn:hover {
   background: color-mix(in srgb, var(--dash-accent, #6f8f63) 12%, #fff);
+}
+
+.clear-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .book-grid {

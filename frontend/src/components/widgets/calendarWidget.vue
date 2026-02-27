@@ -28,13 +28,36 @@
 <script>
 export default {
   name: "CalendarWidget",
+  props: {
+    data: {
+      type: Object,
+      default: () => ({})
+    }
+  },
+  emits: ["update:data"],
   data() {
     const today = new Date();
     return {
-      currentMonth: today.getMonth(),
-      currentYear: today.getFullYear(),
+      currentMonth: Number(this.data?.currentMonth ?? today.getMonth()),
+      currentYear: Number(this.data?.currentYear ?? today.getFullYear()),
       weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     };
+  },
+  watch: {
+    data: {
+      handler(value) {
+        const today = new Date();
+        this.currentMonth = Number(value?.currentMonth ?? today.getMonth());
+        this.currentYear = Number(value?.currentYear ?? today.getFullYear());
+      },
+      deep: true
+    },
+    currentMonth() {
+      this.emitState();
+    },
+    currentYear() {
+      this.emitState();
+    }
   },
   computed: {
     monthName() {
@@ -46,6 +69,12 @@ export default {
     }
   },
   methods: {
+    emitState() {
+      this.$emit("update:data", {
+        currentMonth: this.currentMonth,
+        currentYear: this.currentYear
+      });
+    },
     isToday(day) {
       const today = new Date();
       return (

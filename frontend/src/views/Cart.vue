@@ -12,15 +12,16 @@
         <!-- Cart Items -->
         <div v-else>
           <ul class="list-group mb-4">
-            <li v-for="item in cart.items" :key="item.id" 
+            <li v-for="item in cart.items" :key="item.cartKey || `${item.type || 'template'}:${item.id}`" 
                 class="list-group-item cart-item d-flex justify-content-between align-items-center">
               <div class="d-flex align-items-center">
-                <img :src="item.image" alt="Product image" class="product-img me-3" />
+                <img v-if="item.image" :src="item.image" alt="Product image" class="product-img me-3" />
+                <div v-else class="product-img product-placeholder me-3">Item</div>
                 <div>
                   <strong>{{ item.title }}</strong> - R{{ item.price }}
                 </div>
               </div>
-              <button class="btn btn-sm btn-outline-light remove-btn" @click="cart.removeItem(item.id)">
+              <button class="btn btn-sm btn-outline-light remove-btn" @click="cart.removeItem(item.cartKey || `${item.type || 'template'}:${item.id}`)">
                 Remove
               </button>
             </li>
@@ -91,6 +92,16 @@ export default {
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid #ddd;
+}
+
+.product-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #555;
+  background: #f1f1eb;
 }
 
 .total {

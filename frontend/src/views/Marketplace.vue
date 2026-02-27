@@ -2,20 +2,7 @@
   <div class="main">
     <div class="container mt-4">
       <h2 class="text-glow mb-4">Dashboard Templates</h2>
-      <p class="text-muted mb-2">Buy templates once, or subscribe to unlock all templates.</p>
-      <div class="market-actions mb-4">
-        <button
-          class="btn btn-glow"
-          :disabled="subscribing || hasActiveSubscription"
-          @click="startSubscriptionCheckout"
-        >
-          {{
-            hasActiveSubscription
-              ? 'Subscription Active'
-              : (subscribing ? 'Redirecting...' : 'Subscribe Monthly')
-          }}
-        </button>
-      </div>
+      <p class="text-muted mb-4">Browse templates and apply what you purchase.</p>
 
       <p v-if="error" class="text-danger">{{ error }}</p>
       <p v-if="success" class="text-success">{{ success }}</p>
@@ -157,8 +144,7 @@ export default {
       previewOpen: false,
       previewTemplate: null,
       hasActiveSubscription: false,
-      purchasedTemplateIds: [],
-      subscribing: false
+      purchasedTemplateIds: []
     }
   },
   setup() {
@@ -235,32 +221,6 @@ export default {
         })
       }
       this.$router.push('/cart')
-    },
-    async startSubscriptionCheckout() {
-      try {
-        this.error = ''
-        this.success = ''
-        this.subscribing = true
-        const token = this.getToken()
-        if (!token) throw new Error('Please log in before subscribing')
-
-        const response = await fetch(`${this.getApiBaseUrl()}/api/stripe/create-subscription-session`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        })
-
-        const data = await this.parseJson(response)
-        if (!response.ok || !data.url) {
-          throw new Error(data.message || 'Failed to start subscription checkout')
-        }
-        window.location.href = data.url
-      } catch (err) {
-        this.error = err.message || 'Failed to start subscription checkout'
-      } finally {
-        this.subscribing = false
-      }
     },
     openPreview(template) {
       this.previewTemplate = template
@@ -344,11 +304,6 @@ export default {
   overflow-y: auto;
   background-color: #f7f6f3;
   color: #37352f;
-}
-
-.market-actions {
-  display: flex;
-  gap: 10px;
 }
 
 .product-card {

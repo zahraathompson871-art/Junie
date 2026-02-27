@@ -1,32 +1,11 @@
 import express from "express";
-import Stripe from "stripe";
 import { pool } from "../config/db.js";
 import { protect } from "../middleware/authMiddleware.js";
+import { purchaseNotebookSlots, unlockNotebookUnlimited } from "../models/bookModel.js";
 
 const router = express.Router();
-
-const stripeSecretKey = (process.env.STRIPE_SECRET_KEY || "").trim();
-const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
-
-const pendingStripeSessions = new Map();
-const finalizedSessions = new Set();
+const pendingSimulatedSessions = new Map();
 let commerceSchemaReady = false;
-
-const ensureStripeConfigured = (res) => {
-  if (!stripe || stripeSecretKey.toLowerCase().includes("replace_with_")) {
-    res.status(500).json({ message: "Stripe is not configured. Set a real STRIPE_SECRET_KEY." });
-    return false;
-  }
-  return true;
-};
-
-const toMinorAmount = (amount) => Math.round(Number(amount) * 100);
-const toMysqlDateTime = (unixTs) => {
-  if (!unixTs) return null;
-  const date = new Date(unixTs * 1000);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
-};
 
 const ensureCommerceSchema = async () => {
   if (commerceSchemaReady) return;
@@ -43,30 +22,34 @@ const ensureCommerceSchema = async () => {
   `);
 
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS subscriptions (
+    CREATE TABLE IF NOT EXISTS simulated_payments (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      session_id VARCHAR(80) NOT NULL,
       user_id BIGINT UNSIGNED NOT NULL,
-      stripe_customer_id VARCHAR(255) NULL,
-      stripe_subscription_id VARCHAR(255) NOT NULL,
-      plan_code VARCHAR(64) NOT NULL DEFAULT 'templates_monthly',
-      status VARCHAR(40) NOT NULL,
-      current_period_end DATETIME NULL,
+      cart_items_json JSON NOT NULL,
+      status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
-      UNIQUE KEY uniq_stripe_subscription (stripe_subscription_id),
-      KEY idx_user_status (user_id, status)
+      UNIQUE KEY uniq_session_id (session_id)
     )
   `);
 
   commerceSchemaReady = true;
 };
 
+const createSessionId = (userId) =>
+  `SIM-${Date.now()}-${userId}-${Math.floor(Math.random() * 100000)}`;
+
 const applyTemplatePurchases = async ({ userId, cartItems }) => {
   await ensureCommerceSchema();
 
   for (const item of cartItems) {
-    const templateId = item.id;
+    const type = String(item?.type || "template");
+    if (type !== "template") continue;
+
+    const templateId = Number(item.id);
+    if (!templateId) continue;
 
     const [existingPurchase] = await pool.query(
       "SELECT id FROM purchases WHERE user_id = ? AND template_id = ? LIMIT 1",
@@ -74,236 +57,126 @@ const applyTemplatePurchases = async ({ userId, cartItems }) => {
     );
     if (existingPurchase.length > 0) continue;
 
-    const [widgets] = await pool.query(
-      "SELECT * FROM template_widgets WHERE template_id = ? ORDER BY position",
-      [templateId]
-    );
-
-    for (const widget of widgets) {
-      await pool.query(
-        "INSERT INTO dashboard_widgets (user_id, widget_type, widget_data, position) VALUES (?, ?, ?, ?)",
-        [userId, widget.widget_type, widget.widget_data, widget.position]
+    try {
+      const [widgets] = await pool.query(
+        "SELECT * FROM template_widgets WHERE template_id = ? ORDER BY position",
+        [templateId]
       );
+
+      for (const widget of widgets) {
+        await pool.query(
+          "INSERT INTO dashboard_widgets (user_id, widget_type, widget_data, position) VALUES (?, ?, ?, ?)",
+          [userId, widget.widget_type, widget.widget_data, widget.position]
+        );
+      }
+    } catch (err) {
+      // Keep simulated payment flow resilient even if optional widget tables are unavailable.
+      console.warn(`Skipping widget application for template ${templateId}:`, err.message);
     }
 
     await pool.query("INSERT INTO purchases (user_id, template_id) VALUES (?, ?)", [userId, templateId]);
   }
 };
 
-const saveSubscription = async ({ userId, customerId, subscription }) => {
-  await ensureCommerceSchema();
-  await pool.query(
-    `
-      INSERT INTO subscriptions (
-        user_id,
-        stripe_customer_id,
-        stripe_subscription_id,
-        plan_code,
-        status,
-        current_period_end
-      ) VALUES (?, ?, ?, 'templates_monthly', ?, ?)
-      ON DUPLICATE KEY UPDATE
-        user_id = VALUES(user_id),
-        stripe_customer_id = VALUES(stripe_customer_id),
-        status = VALUES(status),
-        current_period_end = VALUES(current_period_end)
-    `,
-    [
-      userId,
-      customerId || null,
-      subscription.id,
-      subscription.status || "incomplete",
-      toMysqlDateTime(subscription.current_period_end),
-    ]
-  );
+const applyNotebookPurchases = async ({ userId, cartItems }) => {
+  for (const item of cartItems) {
+    const type = String(item?.type || "template");
+    if (type === "notebook_slot") {
+      const quantity = Number(item?.quantity || 1);
+      await purchaseNotebookSlots(userId, Number.isFinite(quantity) && quantity > 0 ? quantity : 1);
+    }
+    if (type === "notebook_unlimited") {
+      await unlockNotebookUnlimited(userId);
+    }
+  }
 };
 
 router.post("/create-checkout-session", protect, async (req, res) => {
   try {
-    if (!ensureStripeConfigured(res)) return;
     await ensureCommerceSchema();
 
     const { cartItems = [] } = req.body;
     const userId = req.user.id;
-    const currency = (process.env.STRIPE_CURRENCY || "zar").trim().toLowerCase();
     const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
 
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
       return res.status(400).json({ message: "Cart items are required" });
     }
 
-    const lineItems = cartItems.map((item) => ({
-      price_data: {
-        currency,
-        product_data: {
-          name: item.title || `Template ${item.id}`,
-        },
-        unit_amount: toMinorAmount(item.price),
-      },
-      quantity: 1,
-    }));
+    const sessionId = createSessionId(userId);
+    pendingSimulatedSessions.set(sessionId, { userId, cartItems, finalized: false });
 
-    const checkoutSession = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: lineItems,
-      success_url: `${frontendUrl}/#/thankyou?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${frontendUrl}/#/checkout?canceled=1`,
-      metadata: {
-        userId: String(userId),
-      },
+    await pool.query(
+      `INSERT INTO simulated_payments (session_id, user_id, cart_items_json, status)
+       VALUES (?, ?, ?, 'PENDING')
+       ON DUPLICATE KEY UPDATE
+         cart_items_json = VALUES(cart_items_json),
+         status = 'PENDING'`,
+      [sessionId, userId, JSON.stringify(cartItems)]
+    );
+
+    return res.json({
+      provider: "simulated",
+      sessionId,
+      url: `${frontendUrl}/#/thankyou?session_id=${encodeURIComponent(sessionId)}`,
     });
-
-    pendingStripeSessions.set(checkoutSession.id, {
-      userId,
-      cartItems,
-    });
-
-    return res.json({ url: checkoutSession.url, sessionId: checkoutSession.id });
   } catch (err) {
-    console.error("Stripe create-checkout-session error:", err);
-    return res.status(500).json({ message: "Failed to create Stripe checkout session" });
+    console.error("create-checkout-session error:", err);
+    return res.status(500).json({ message: "Failed to start simulated checkout" });
   }
 });
 
 router.post("/confirm-session", protect, async (req, res) => {
   try {
-    if (!ensureStripeConfigured(res)) return;
     await ensureCommerceSchema();
 
     const { sessionId } = req.body;
     const userId = req.user.id;
-
     if (!sessionId) return res.status(400).json({ message: "sessionId is required" });
-    if (finalizedSessions.has(sessionId)) {
-      return res.json({ message: "Session already confirmed", alreadyConfirmed: true });
-    }
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["subscription"],
-    });
-    if (!session) {
-      return res.status(404).json({ message: "Session not found" });
-    }
+    const [rows] = await pool.query(
+      "SELECT session_id, user_id, cart_items_json, status FROM simulated_payments WHERE session_id = ? LIMIT 1",
+      [sessionId]
+    );
 
-    const pending = pendingStripeSessions.get(sessionId);
-    if (!pending || pending.userId !== userId) {
+    const payment = rows[0];
+    if (!payment || Number(payment.user_id) !== Number(userId)) {
       return res.status(404).json({ message: "Checkout session not found for this user" });
     }
 
-    if (session.mode === "payment") {
-      if (session.payment_status !== "paid") {
-        return res.status(400).json({ message: "Payment not completed" });
-      }
+    const pending = pendingSimulatedSessions.get(sessionId);
+    if (pending && !pending.finalized) {
       await applyTemplatePurchases({ userId, cartItems: pending.cartItems });
-    } else if (session.mode === "subscription") {
-      const subscription = session.subscription;
-      if (!subscription || typeof subscription !== "object") {
-        return res.status(400).json({ message: "Subscription not found on checkout session" });
-      }
-      if (!["active", "trialing"].includes(subscription.status)) {
-        return res.status(400).json({ message: `Subscription not active (${subscription.status})` });
-      }
-      await saveSubscription({
-        userId,
-        customerId: typeof session.customer === "string" ? session.customer : null,
-        subscription,
-      });
-    } else {
-      return res.status(400).json({ message: `Unsupported checkout mode: ${session.mode}` });
+      await applyNotebookPurchases({ userId, cartItems: pending.cartItems });
+      pending.finalized = true;
+    } else if (!pending) {
+      const cartItems = Array.isArray(payment.cart_items_json)
+        ? payment.cart_items_json
+        : JSON.parse(payment.cart_items_json || "[]");
+      await applyTemplatePurchases({ userId, cartItems });
+      await applyNotebookPurchases({ userId, cartItems });
     }
 
-    finalizedSessions.add(sessionId);
-    pendingStripeSessions.delete(sessionId);
+    if (payment.status !== "COMPLETE") {
+      await pool.query(
+        "UPDATE simulated_payments SET status = 'COMPLETE' WHERE session_id = ?",
+        [sessionId]
+      );
+    }
 
-    return res.json({
-      message: session.mode === "subscription"
-        ? "Subscription confirmed"
-        : "Payment confirmed and purchase applied",
-      mode: session.mode,
-    });
+    return res.json({ message: "Simulated payment confirmed and purchase applied", mode: "payment" });
   } catch (err) {
-    console.error("Stripe confirm-session error:", err);
-    return res.status(500).json({ message: "Failed to confirm Stripe session" });
+    console.error("confirm-session error:", err);
+    return res.status(500).json({ message: "Failed to confirm simulated checkout session" });
   }
 });
 
 router.post("/create-subscription-session", protect, async (req, res) => {
-  try {
-    if (!ensureStripeConfigured(res)) return;
-    await ensureCommerceSchema();
-
-    const userId = req.user.id;
-    const currency = (process.env.STRIPE_CURRENCY || "zar").trim().toLowerCase();
-    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/+$/, "");
-    const amountMajor = Number(process.env.STRIPE_TEMPLATE_SUBSCRIPTION_AMOUNT || 99);
-
-    if (!Number.isFinite(amountMajor) || amountMajor <= 0) {
-      return res.status(400).json({ message: "Invalid STRIPE_TEMPLATE_SUBSCRIPTION_AMOUNT" });
-    }
-
-    const checkoutSession = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      line_items: [
-        {
-          price_data: {
-            currency,
-            product_data: {
-              name: "Template Subscription",
-              description: "Unlock all dashboard templates while subscribed",
-            },
-            recurring: {
-              interval: "month",
-            },
-            unit_amount: toMinorAmount(amountMajor),
-          },
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        userId: String(userId),
-      },
-      success_url: `${frontendUrl}/#/thankyou?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${frontendUrl}/#/checkout?canceled=1`,
-    });
-
-    pendingStripeSessions.set(checkoutSession.id, {
-      userId,
-      cartItems: [],
-      type: "subscription",
-    });
-
-    return res.json({ url: checkoutSession.url, sessionId: checkoutSession.id });
-  } catch (err) {
-    console.error("Stripe create-subscription-session error:", err);
-    return res.status(500).json({ message: "Failed to create Stripe subscription checkout session" });
-  }
+  return res.status(501).json({ message: "Subscriptions are disabled in simulated payment mode." });
 });
 
 router.get("/subscription-status", protect, async (req, res) => {
-  try {
-    await ensureCommerceSchema();
-    const userId = req.user.id;
-    const [rows] = await pool.query(
-      `SELECT status, current_period_end
-       FROM subscriptions
-       WHERE user_id = ?
-       ORDER BY updated_at DESC
-       LIMIT 1`,
-      [userId]
-    );
-
-    const row = rows[0];
-    const hasActiveSubscription = !!row && ["active", "trialing"].includes(row.status);
-
-    return res.json({
-      hasActiveSubscription,
-      status: row?.status || null,
-      currentPeriodEnd: row?.current_period_end || null,
-    });
-  } catch (err) {
-    console.error("Stripe subscription-status error:", err);
-    return res.status(500).json({ message: "Failed to get subscription status" });
-  }
+  return res.json({ hasActiveSubscription: false, status: null, currentPeriodEnd: null });
 });
 
 export default router;

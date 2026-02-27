@@ -6,19 +6,21 @@
         Complete your profile to unlock your dashboard.
       </p>
 
-      <input class="form-control themed-input mb-3" v-model="name" placeholder="Full Name">
-      <input class="form-control themed-input mb-3" v-model="email" placeholder="Email">
+      <p v-if="error" class="text-danger text-center">{{ error }}</p>
+
+      <input class="form-control themed-input mb-3" v-model="name" placeholder="Full Name" />
+      <input class="form-control themed-input mb-3" v-model="email" placeholder="Email" disabled />
       <textarea class="form-control themed-input mb-3" v-model="bio" placeholder="Short Bio"></textarea>
 
       <div class="mb-3 text-center">
         <label class="form-label">Upload Profile Picture</label>
-        <input type="file" class="form-control themed-input" @change="uploadAvatar">
+        <input type="file" class="form-control themed-input" @change="uploadAvatar" />
         <div v-if="avatar" class="preview mt-3">
-          <img :src="avatar" alt="Avatar preview" class="avatar-preview rounded-circle">
+          <img :src="avatar" alt="Avatar preview" class="avatar-preview rounded-circle" />
         </div>
       </div>
 
-      <button class="btn btn-glow w-100" @click="saveAccount">Create Account</button>
+      <button class="btn btn-glow w-100" @click="saveAccount">Save Account</button>
     </div>
   </div>
 </template>
@@ -27,46 +29,75 @@
 export default {
   data() {
     return {
-      name: '',
-      email: '',
-      bio: '',
-      avatar: ''
+      name: "",
+      email: "",
+      bio: "",
+      avatar: "",
+      error: ""
     }
   },
-  mounted() {
-    // Auto-fill with existing user data if available
-    const user = JSON.parse(localStorage.getItem('user'))
-    if (user) {
-      this.name = user.name || ''
-      this.email = user.email || ''
-      this.bio = user.bio || ''
-      this.avatar = user.avatar || ''
+  async mounted() {
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    try {
+      const response = await fetch(`${this.getApiBaseUrl()}/api/users/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) return
+
+      this.name = data.full_name || ""
+      this.email = data.email || ""
+      this.avatar = data.avatar || ""
+      const extras = JSON.parse(localStorage.getItem("profileExtras") || "{}")
+      this.bio = extras.bio || ""
+    } catch {
+      this.error = "Failed to load profile details."
     }
   },
   methods: {
-    uploadAvatar(e) {
-      const file = e.target.files[0]
-      if (file) {
-        this.avatar = URL.createObjectURL(file)
-      }
+    getApiBaseUrl() {
+      return import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"
     },
-    saveAccount() {
-      let user = JSON.parse(localStorage.getItem('user')) || {}
-      user.name = this.name
-      user.email = this.email
-      user.bio = this.bio
-      user.avatar = this.avatar
-      user.isProfileComplete = true // ✅ mark profile as complete
-
-      localStorage.setItem('user', JSON.stringify(user))
-
-      alert("Profile completed successfully!")
-      this.$router.push({ name: 'Dashboard' })
+    uploadAvatar(e) {
+      const file = e.target.files?.[0]
+      if (!file) return
+      this.avatar = URL.createObjectURL(file)
+    },
+    async saveAccount() {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        this.error = "Please log in first."
+        return
+      }
+      try {
+        const response = await fetch(`${this.getApiBaseUrl()}/api/users/me`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            full_name: this.name,
+            avatar: this.avatar
+          })
+        })
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok) {
+          throw new Error(data.error || data.message || "Failed to save account")
+        }
+        localStorage.setItem("profileExtras", JSON.stringify({ bio: this.bio }))
+        this.$router.push({ name: "Dashboard" })
+      } catch (err) {
+        this.error = err.message || "Failed to save account."
+      }
     }
   }
 }
 </script>
-
 
 <style scoped>
 .create-account {
@@ -77,12 +108,11 @@ export default {
   background: #ffffff;
   border-radius: 16px;
   color: #333;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 .text-glow {
-  color: black;
-  text-shadow: 0 0 8px rgb(72, 72, 70);
+  color: #111;
 }
 
 .subtitle {
@@ -94,20 +124,13 @@ export default {
   border: 1px solid #ddd;
   color: #333;
 }
-.themed-input::placeholder {
-  color: #1f1c1c;
-}
 
 .btn-glow {
-  background: linear-gradient(black);
+  background: #121212;
   color: #fff;
   border: none;
   border-radius: 8px;
   padding: 10px;
-  transition: transform 0.2s ease;
-}
-.btn-glow:hover {
-  transform: scale(1.05);
 }
 
 .avatar-preview {

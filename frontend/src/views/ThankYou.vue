@@ -33,12 +33,12 @@ export default {
 
     if (!sessionId) {
       this.loading = false
-      this.error = 'Missing Stripe session id.'
+      this.error = 'Missing simulated session id.'
       return
     }
 
     try {
-      const response = await fetch(`${apiBase}/api/stripe/confirm-session`, {
+      const response = await fetch(`${apiBase}/api/checkout/confirm-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,11 +50,7 @@ export default {
       if (!response.ok) {
         throw new Error(data.message || 'Failed to confirm payment.')
       }
-      if (data.mode === 'subscription') {
-        this.successMessage = 'Your subscription is active. You can now apply all templates.'
-      } else {
-        this.successMessage = 'Your payment was successful and templates are unlocked.'
-      }
+      this.successMessage = 'Simulated payment successful. Your purchases are now applied.'
       this.cart.clearCart()
     } catch (err) {
       this.error = err.message || 'Failed to confirm payment.'

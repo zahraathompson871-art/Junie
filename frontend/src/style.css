@@ -32,6 +32,8 @@ body {
   font-family: "Plus Jakarta Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   position: relative;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
 }
 
 body::before {
@@ -85,6 +87,11 @@ body::before {
   color: #fff;
 }
 
+.btn-glow:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 108, 255, 0.2), 0 10px 24px rgba(74, 108, 255, 0.24);
+}
+
 .form-control,
 input,
 textarea,
@@ -108,4 +115,14 @@ select:focus {
 p,
 small {
   color: var(--n-text-muted);
+}
+
+a {
+  color: inherit;
+}
+
+a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 108, 255, 0.16);
+  border-radius: 8px;
 }

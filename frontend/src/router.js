@@ -7,7 +7,6 @@ import SignUp from './views/SignUp.vue'
 import Marketplace from './views/Marketplace.vue'
 import Dashboard from './views/Dashboard.vue'
 import Profile from './views/Profile.vue'
-import CreatorHub from './views/CreatorHub.vue'
 import CreateAccount from './views/CreateAccount.vue'
 import Cart from './views/Cart.vue'
 import Checkout from './views/Checkout.vue'
@@ -21,11 +20,12 @@ const routes = [
   { path: '/create-account', name: 'CreateAccount', component: CreateAccount },
   { path: '/dashboard', name: 'Dashboard', component: Dashboard },
   { path: '/marketplace', name: 'Marketplace', component: Marketplace },
-  { path: '/creatorhub', name: 'CreatorHub', component: CreatorHub },
   { path: '/profile', name: 'Profile', component: Profile },
   { path: '/cart', name: 'Cart', component: Cart },
   { path: '/checkout', name: 'Checkout', component: Checkout },
   { path: '/thankyou', name: 'ThankYou', component: ThankYou }
+  ,{ path: '/notebooks', name: 'Notebooks', component: Notebooks }
+  ,{ path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
 const router = createRouter({
@@ -37,14 +37,14 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
 
   const protectedRoutes = [
-    'Dashboard', 'Marketplace', 'CreatorHub', 'Profile', 'Cart', 'Checkout', 'ThankYou', 'Notebooks'
+    'Dashboard', 'Marketplace', 'Profile', 'Cart', 'Checkout', 'ThankYou', 'Notebooks'
   ]
-
-  console.log('Navigation:', from.name, '->', to.name, 'HasToken:', !!token)
 
   if (protectedRoutes.includes(to.name) && !token) {
     return next({ name: 'Login' })
   }
+
+  return next()
 })
 
 export default router

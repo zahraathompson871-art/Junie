@@ -13,13 +13,17 @@
         <li><router-link to="/dashboard" class="nav-link">Dashboard</router-link></li>
         <li><router-link to="/notebooks" class="nav-link">Notebooks</router-link></li>
         <li><router-link to="/marketplace" class="nav-link">Marketplace</router-link></li>
-        <li><router-link to="/creatorhub" class="nav-link">CreatorHub</router-link></li>
         <li class="profile-cart">
           <router-link to="/profile" class="nav-link">Profile</router-link>
-          <div class="cart-icon" @click="$router.push('/cart')">
+          <button
+            class="cart-icon"
+            type="button"
+            aria-label="Open cart"
+            @click="$router.push('/cart')"
+          >
             Cart
             <span v-if="cart.count > 0" class="cart-count">{{ cart.count }}</span>
-          </div>
+          </button>
         </li>
       </ul>
     </div>
@@ -50,6 +54,7 @@ export default {
   z-index: 1000;
   gap: 16px;
   backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px rgba(26, 41, 84, 0.06);
 }
 
 .brand-name {
@@ -78,6 +83,7 @@ export default {
 .search-bar:focus {
   border-color: #9eb2ff;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 108, 255, 0.14);
 }
 
 .nav-links {
@@ -125,6 +131,18 @@ export default {
   padding: 6px 12px;
   background: #f4f8ff;
   font-weight: 600;
+  line-height: 1.2;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.cart-icon:hover {
+  border-color: #aac3ff;
+  background: #edf4ff;
+}
+
+.cart-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 108, 255, 0.18);
 }
 
 .cart-count {

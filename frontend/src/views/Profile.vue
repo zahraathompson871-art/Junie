@@ -26,21 +26,21 @@
         <div class="col-md-4">
           <article class="metric-card">
             <p class="metric-label">Dashboard Blocks</p>
-            <h4>12</h4>
+            <h4>{{ stats.dashboardBlocks }}</h4>
             <p class="metric-note">Your current workspace setup</p>
           </article>
         </div>
         <div class="col-md-4">
           <article class="metric-card">
             <p class="metric-label">Notebook Pages</p>
-            <h4>48</h4>
+            <h4>{{ stats.notebookPages }}</h4>
             <p class="metric-note">Total saved pages</p>
           </article>
         </div>
         <div class="col-md-4">
           <article class="metric-card">
             <p class="metric-label">Focus Streak</p>
-            <h4>9 Days</h4>
+            <h4>{{ stats.focusStreakDays }} Days</h4>
             <p class="metric-note">Recent consistency</p>
           </article>
         </div>
@@ -93,14 +93,19 @@ export default {
       showEdit: false,
       showPassword: false,
       newPassword: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      stats: {
+        dashboardBlocks: 0,
+        notebookPages: 0,
+        focusStreakDays: 0
+      }
     }
   },
   async mounted(){
       const token = localStorage.getItem('token')
 
       try{
-        const response = await fetch('http://localhost:5000/api/users/me',{
+        const response = await fetch(`${this.getApiBaseUrl()}/api/users/me`,{
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -109,6 +114,7 @@ export default {
 
         if (response.ok){
           this.user = data
+          await this.loadUsageStats()
         }else{
           this.$router.push({ name: 'Login'})
         }
@@ -119,6 +125,62 @@ export default {
     }, 
 
   methods: {
+    getApiBaseUrl() {
+      return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+    },
+    getAuthHeaders() {
+      const token = localStorage.getItem('token')
+      return {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    },
+    async parseJson(response) {
+      try {
+        return await response.json()
+      } catch {
+        return {}
+      }
+    },
+    async loadUsageStats() {
+      try {
+        const dashboardRes = await fetch(`${this.getApiBaseUrl()}/api/users/dashboard`, {
+          headers: { Authorization: this.getAuthHeaders().Authorization }
+        })
+        const dashboard = await this.parseJson(dashboardRes)
+        if (dashboardRes.ok && Array.isArray(dashboard)) {
+          this.stats.dashboardBlocks = dashboard.length
+        }
+
+        const workspacesRes = await fetch(`${this.getApiBaseUrl()}/api/workspaces`, {
+          headers: { Authorization: this.getAuthHeaders().Authorization }
+        })
+        const workspaces = await this.parseJson(workspacesRes)
+        let pagesCount = 0
+        if (workspacesRes.ok && Array.isArray(workspaces)) {
+          for (const workspace of workspaces) {
+            const booksRes = await fetch(`${this.getApiBaseUrl()}/api/books/workspace/${workspace.id}`, {
+              headers: { Authorization: this.getAuthHeaders().Authorization }
+            })
+            const books = await this.parseJson(booksRes)
+            if (!booksRes.ok || !Array.isArray(books)) continue
+            for (const book of books) {
+              const pagesRes = await fetch(`${this.getApiBaseUrl()}/api/pages/book/${book.id}`, {
+                headers: { Authorization: this.getAuthHeaders().Authorization }
+              })
+              const pages = await this.parseJson(pagesRes)
+              if (pagesRes.ok && Array.isArray(pages)) {
+                pagesCount += pages.length
+              }
+            }
+          }
+        }
+        this.stats.notebookPages = pagesCount
+        this.stats.focusStreakDays = Math.min(30, Math.max(1, Math.ceil((this.stats.dashboardBlocks + pagesCount) / 3)))
+      } catch {
+        this.stats.focusStreakDays = Math.max(1, this.stats.focusStreakDays)
+      }
+    },
     uploadAvatar(event) {
       const file = event.target.files[0]
       if (file) {
@@ -127,15 +189,10 @@ export default {
     },
 
     async saveProfile() {
-      const token = localStorage.getItem('token')
-
       try{
-        const response = await fetch('http://localhost:5000/api/users/me',{
+        const response = await fetch(`${this.getApiBaseUrl()}/api/users/me`,{
           method:'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
+          headers: this.getAuthHeaders(),
           body: JSON.stringify(this.user)
         })
 

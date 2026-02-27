@@ -7,7 +7,7 @@
         <router-link to="/dashboard">Dashboard</router-link>
         <router-link to="/profile">Profile</router-link>
       </div>
-      <div class="footer-copy">© {{ year }} Junie. All rights reserved.</div>
+      <div class="footer-copy">&copy; {{ year }} Junie. All rights reserved.</div>
     </div>
   </footer>
 </template>
